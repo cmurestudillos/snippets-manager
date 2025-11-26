@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Snippets Manager Pro</title>
+
+    <!-- Highlight.js CSS - Tema Oscuro por defecto -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css"
+      id="hljs-dark" />
+    <!-- Highlight.js CSS - Tema Claro (inicialmente oculto) -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-light.min.css"
+      id="hljs-light"
+      disabled />
+
+    <!-- Estilos propios -->
+    <link rel="stylesheet" href="assets/styles/styles.css" />
+  </head>
+  <body data-theme="dark">
+    <div class="app-container">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <h1>📝 Snippets Pro</h1>
+          <button id="new-snippet-btn" class="btn btn-primary">+ Nuevo Snippet</button>
+        </div>
+
+        <div class="search-container">
+          <input type="text" id="search-input" placeholder="Buscar snippets..." class="search-input" />
+          <select id="language-filter" class="filter-select">
+            <option value="">Todos los lenguajes</option>
+          </select>
+        </div>
+
+        <div class="snippets-list" id="snippets-list">
+          <div class="loading">Cargando snippets...</div>
+        </div>
+
+        <div class="sidebar-footer">
+          <div class="footer-actions">
+            <button id="refresh-btn" class="btn btn-icon" title="Actualizar">🔄</button>
+            <button id="import-btn" class="btn btn-icon" title="Importar">📥</button>
+            <button id="export-btn" class="btn btn-icon" title="Exportar">📤</button>
+            <button id="theme-toggle-btn" class="btn btn-icon" title="Cambiar tema">🌓</button>
+          </div>
+          <div class="snippet-count"><span id="snippet-count">0</span> snippets</div>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="main-content">
+        <!-- Vista inicial cuando no hay snippet seleccionado -->
+        <div id="empty-state" class="empty-state">
+          <div class="empty-state-icon">📄</div>
+          <h2>Selecciona un snippet o crea uno nuevo</h2>
+          <p>Usa el botón "+ Nuevo Snippet" para comenzar</p>
+          <div class="empty-state-actions">
+            <button id="empty-import-btn" class="btn btn-secondary">📥 Importar Snippets</button>
+          </div>
+        </div>
+
+        <!-- Vista de snippet seleccionado -->
+        <div id="snippet-view" class="snippet-view" style="display: none">
+          <div class="snippet-header">
+            <div class="snippet-title">
+              <h2 id="snippet-description"></h2>
+              <span id="snippet-language" class="language-badge"></span>
+            </div>
+            <div class="snippet-actions">
+              <div class="rating-container">
+                <span class="rating-label">Rating:</span>
+                <div class="stars" id="stars-display"></div>
+              </div>
+              <button id="export-single-btn" class="btn btn-secondary">💾 Exportar</button>
+              <button id="edit-btn" class="btn btn-secondary">✏️ Editar</button>
+              <button id="delete-btn" class="btn btn-danger">🗑️ Eliminar</button>
+            </div>
+          </div>
+
+          <div class="snippet-code-container">
+            <div class="code-header">
+              <span id="code-language-label">Código</span>
+              <button id="copy-btn" class="btn btn-small">📋 Copiar</button>
+            </div>
+            <pre><code id="snippet-code" class="code-block"></code></pre>
+          </div>
+
+          <div class="snippet-meta">
+            <span id="snippet-date"></span>
+          </div>
+        </div>
+
+        <!-- Vista de edición/creación -->
+        <div id="edit-view" class="edit-view" style="display: none">
+          <div class="edit-header">
+            <h2 id="edit-title">Nuevo Snippet</h2>
+            <div class="edit-actions">
+              <button id="cancel-btn" class="btn btn-secondary">Cancelar</button>
+              <button id="save-btn" class="btn btn-primary">💾 Guardar</button>
+            </div>
+          </div>
+
+          <form id="snippet-form" class="snippet-form">
+            <div class="form-group">
+              <label for="form-description">Descripción</label>
+              <input type="text" id="form-description" placeholder="Ej: Array Methods: map()" required />
+            </div>
+
+            <div class="form-group">
+              <label for="form-language">Lenguaje / Framework</label>
+              <select id="form-language" required>
+                <option value="">Selecciona un lenguaje o framework</option>
+                <optgroup label="JavaScript & Frameworks">
+                  <option value="javascript">JavaScript</option>
+                  <option value="typescript">TypeScript</option>
+                  <option value="react">React / JSX</option>
+                  <option value="vue">Vue.js</option>
+                  <option value="angular">Angular</option>
+                  <option value="nodejs">Node.js</option>
+                </optgroup>
+                <optgroup label="Lenguajes de Programación">
+                  <option value="python">Python</option>
+                  <option value="java">Java</option>
+                  <option value="csharp">C#</option>
+                  <option value="cpp">C++</option>
+                  <option value="php">PHP</option>
+                  <option value="ruby">Ruby</option>
+                  <option value="go">Go</option>
+                  <option value="rust">Rust</option>
+                  <option value="swift">Swift</option>
+                  <option value="kotlin">Kotlin</option>
+                </optgroup>
+                <optgroup label="Web">
+                  <option value="html">HTML</option>
+                  <option value="css">CSS</option>
+                  <option value="scss">SCSS</option>
+                  <option value="sass">Sass</option>
+                </optgroup>
+                <optgroup label="Datos & Otros">
+                  <option value="sql">SQL</option>
+                  <option value="json">JSON</option>
+                  <option value="xml">XML</option>
+                  <option value="yaml">YAML</option>
+                  <option value="markdown">Markdown</option>
+                </optgroup>
+                <optgroup label="Shell & Herramientas">
+                  <option value="bash">Bash</option>
+                  <option value="powershell">PowerShell</option>
+                  <option value="git">Git</option>
+                  <option value="docker">Docker</option>
+                </optgroup>
+                <optgroup label="Otros">
+                  <option value="http">HTTP</option>
+                  <option value="graphql">GraphQL</option>
+                  <option value="regex">Regex</option>
+                  <option value="other">Otro</option>
+                </optgroup>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="form-code">Código</label>
+              <textarea id="form-code" rows="15" placeholder="Escribe tu código aquí..." required></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="form-rating">Rating</label>
+              <div class="stars-input" id="stars-input">
+                <span class="star" data-value="1">☆</span>
+                <span class="star" data-value="2">☆</span>
+                <span class="star" data-value="3">☆</span>
+                <span class="star" data-value="4">☆</span>
+                <span class="star" data-value="5">☆</span>
+              </div>
+              <input type="hidden" id="form-rating" value="0" />
+            </div>
+          </form>
+        </div>
+      </main>
+    </div>
+
+    <!-- Toast notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Highlight.js Library desde CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+    <!-- App Script -->
+    <script src="renderer.js"></script>
+  </body>
+</html>

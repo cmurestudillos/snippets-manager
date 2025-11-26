@@ -1,0 +1,51 @@
+{
+  "name": "snippets-manager",
+  "version": "2.0.0",
+  "description": "Gestor de snippets de código con Electron",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "package:mac": "electron-builder build --mac",
+    "package:win": "electron-builder build --windows",
+    "package:linux": "electron-builder build --linux"
+  },
+  "keywords": [
+    "electron",
+    "snippets",
+    "code",
+    "manager"
+  ],
+  "author": "Carlos Mur",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.12.2",
+    "highlight.js": "^11.11.1"
+  },
+  "devDependencies": {
+    "electron": "^38.4.0",
+    "electron-builder": "^26.0.12",
+    "eslint": "^9.38.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-jsdoc": "^61.1.9",
+    "eslint-plugin-prettier": "^5.5.4",
+    "prettier": "^3.6.2"
+  },
+  "build": {
+    "appId": "com.cmurestudillos.snippetsmanager",
+    "productName": "Snippets Manager",
+    "directories": {
+      "output": "release/"
+    },
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "icon": "src/assets/icons/icon.icns"
+    },
+    "win": {
+      "icon": "src/assets/icons/icon.ico"
+    },
+    "linux": {
+      "icon": "src/assets/icons/icon.png",
+      "category": "Development"
+    }
+  }
+}
