@@ -11,6 +11,9 @@ importers:
       axios:
         specifier: ^1.12.2
         version: 1.16.1
+      ms:
+        specifier: ^2.1.3
+        version: 2.1.3
     devDependencies:
       electron:
         specifier: ^42.0.0
