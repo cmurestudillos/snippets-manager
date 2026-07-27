@@ -344,25 +344,7 @@ async function saveSnippet(event) {
     return;
   }
 
-  let result;
-
-  if (editingSnippet) {
-    result = await window.api.updateSnippet(editingSnippet._id, snippetData);
-    if (result.success) {
-      const index = snippets.findIndex(s => s._id === editingSnippet._id);
-      if (index !== -1) {
-        snippets[index] = { ...snippets[index], ...snippetData };
-        selectedSnippet = snippets[index];
-      }
-      showToast('Snippet actualizado correctamente', 'success');
-    }
-  } else {
-    result = await window.api.createSnippet(snippetData);
-    if (result.success) {
-      await loadSnippets();
-      showToast('Snippet creado correctamente', 'success');
-    }
-  }
+  const result = editingSnippet ? await updateExistingSnippet(snippetData) : await createNewSnippet(snippetData);
 
   if (result.success) {
     applyFilters();
@@ -376,6 +358,28 @@ async function saveSnippet(event) {
   } else {
     showToast('Error al guardar snippet: ' + result.error, 'error');
   }
+}
+
+async function updateExistingSnippet(snippetData) {
+  const result = await window.api.updateSnippet(editingSnippet._id, snippetData);
+  if (result.success) {
+    const index = snippets.findIndex(s => s._id === editingSnippet._id);
+    if (index !== -1) {
+      snippets[index] = { ...snippets[index], ...snippetData };
+      selectedSnippet = snippets[index];
+    }
+    showToast('Snippet actualizado correctamente', 'success');
+  }
+  return result;
+}
+
+async function createNewSnippet(snippetData) {
+  const result = await window.api.createSnippet(snippetData);
+  if (result.success) {
+    await loadSnippets();
+    showToast('Snippet creado correctamente', 'success');
+  }
+  return result;
 }
 
 function cancelEdit() {
