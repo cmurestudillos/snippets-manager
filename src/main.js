@@ -192,9 +192,8 @@ ipcMain.handle('export-single-snippet', async (event, snippet) => {
       return { success: false, cancelled: true };
     }
 
-    // Agregar comentario con metadata al inicio del archivo
-    const header = generateFileHeader(snippet);
-    const content = header + snippet.code;
+    // Comentario con metadata al inicio del archivo (si el lenguaje admite comentarios)
+    const content = buildExportContent(snippet);
 
     await fs.writeFile(filePath, content, 'utf-8');
     return { success: true, filePath };
@@ -208,29 +207,54 @@ ipcMain.handle('export-single-snippet', async (event, snippet) => {
 // FUNCIONES AUXILIARES
 // ============================================
 
+// Extensión y estilo de comentario de la cabecera por lenguaje (valores de <select id="form-language">).
+// header: null → sin cabecera (JSON no admite comentarios).
+const BLOCK = { start: '/*', line: ' *', end: ' */' };
+const HASH = { start: null, line: '#', end: null };
+const SLASHES = { start: null, line: '//', end: null };
+const MARKUP = { start: '<!--', line: '', end: '-->' };
+
+const LANGUAGE_FILES = {
+  javascript: { ext: 'js', header: BLOCK },
+  typescript: { ext: 'ts', header: BLOCK },
+  react: { ext: 'jsx', header: BLOCK },
+  vue: { ext: 'vue', header: MARKUP },
+  angular: { ext: 'ts', header: BLOCK },
+  nodejs: { ext: 'js', header: BLOCK },
+  python: { ext: 'py', header: { start: '"""', line: '', end: '"""' } },
+  java: { ext: 'java', header: BLOCK },
+  csharp: { ext: 'cs', header: BLOCK },
+  cpp: { ext: 'cpp', header: BLOCK },
+  php: { ext: 'php', header: BLOCK },
+  ruby: { ext: 'rb', header: { start: '=begin', line: '', end: '=end' } },
+  go: { ext: 'go', header: BLOCK },
+  rust: { ext: 'rs', header: BLOCK },
+  swift: { ext: 'swift', header: BLOCK },
+  kotlin: { ext: 'kt', header: BLOCK },
+  html: { ext: 'html', header: MARKUP },
+  css: { ext: 'css', header: BLOCK },
+  scss: { ext: 'scss', header: BLOCK },
+  sass: { ext: 'sass', header: SLASHES },
+  sql: { ext: 'sql', header: BLOCK },
+  json: { ext: 'json', header: null },
+  xml: { ext: 'xml', header: MARKUP },
+  yaml: { ext: 'yml', header: HASH },
+  markdown: { ext: 'md', header: MARKUP },
+  bash: { ext: 'sh', header: HASH },
+  powershell: { ext: 'ps1', header: HASH },
+  git: { ext: 'txt', header: HASH },
+  docker: { ext: 'dockerfile', header: HASH },
+  http: { ext: 'http', header: HASH },
+  graphql: { ext: 'graphql', header: HASH },
+  regex: { ext: 'txt', header: HASH },
+};
+
+function getLanguageFile(language) {
+  return LANGUAGE_FILES[String(language).toLowerCase()] || { ext: 'txt', header: HASH };
+}
+
 function getFileExtension(language) {
-  const extensions = {
-    javascript: 'js',
-    typescript: 'ts',
-    python: 'py',
-    java: 'java',
-    css: 'css',
-    html: 'html',
-    sql: 'sql',
-    bash: 'sh',
-    git: 'txt',
-    http: 'http',
-    json: 'json',
-    markdown: 'md',
-    php: 'php',
-    ruby: 'rb',
-    go: 'go',
-    rust: 'rs',
-    vue: 'vue',
-    react: 'jsx',
-    angular: 'ts',
-  };
-  return extensions[language.toLowerCase()] || 'txt';
+  return getLanguageFile(language).ext;
 }
 
 function sanitizeFilename(filename) {
@@ -238,37 +262,28 @@ function sanitizeFilename(filename) {
 }
 
 function generateFileHeader(snippet) {
-  const commentStyle = getCommentStyle(snippet.language);
+  const style = getLanguageFile(snippet.language).header;
+  if (!style) {
+    return '';
+  }
   const date = new Date(snippet.fecha).toLocaleDateString();
+  const rating = Math.min(5, Math.max(0, Math.round(snippet.rating || 0)));
+  const lines = [
+    `Snippet: ${snippet.description}`,
+    `Language: ${snippet.language}`,
+    `Rating: ${'★'.repeat(rating)}${'☆'.repeat(5 - rating)}`,
+    `Date: ${date}`,
+  ].map(text => `${style.line} ${text}`);
 
-  return `${commentStyle.start}
-${commentStyle.line} Snippet: ${snippet.description}
-${commentStyle.line} Language: ${snippet.language}
-${commentStyle.line} Rating: ${'★'.repeat(snippet.rating || 0)}${'☆'.repeat(5 - (snippet.rating || 0))}
-${commentStyle.line} Date: ${date}
-${commentStyle.end}
-
-`;
+  return [style.start, ...lines, style.end].filter(line => line !== null).join('\n') + '\n\n';
 }
 
-function getCommentStyle(language) {
-  const styles = {
-    javascript: { start: '/*', line: ' *', end: ' */' },
-    typescript: { start: '/*', line: ' *', end: ' */' },
-    python: { start: '"""', line: '', end: '"""' },
-    java: { start: '/*', line: ' *', end: ' */' },
-    css: { start: '/*', line: ' *', end: ' */' },
-    html: { start: '<!--', line: '', end: '-->' },
-    sql: { start: '/*', line: ' *', end: ' */' },
-    bash: { start: '#', line: '#', end: '' },
-    php: { start: '/*', line: ' *', end: ' */' },
-    ruby: { start: '=begin', line: '', end: '=end' },
-    go: { start: '/*', line: ' *', end: ' */' },
-    rust: { start: '/*', line: ' *', end: ' */' },
-    vue: { start: '<!--', line: '', end: '-->' },
-    react: { start: '/*', line: ' *', end: ' */' },
-    angular: { start: '/*', line: ' *', end: ' */' },
-  };
-
-  return styles[language.toLowerCase()] || { start: '/*', line: ' *', end: ' */' };
+// La declaración <?xml ...?> y el shebang (#!) tienen que ser la primera línea: la cabecera va detrás
+function buildExportContent(snippet) {
+  const header = generateFileHeader(snippet);
+  const declaration = snippet.code.match(/^\s*(<\?xml[^>]*\?>|#![^\r\n]*)\r?\n?/);
+  if (declaration) {
+    return declaration[0].trimStart().replace(/\r?\n?$/, '\n') + header + snippet.code.slice(declaration[0].length);
+  }
+  return header + snippet.code;
 }
