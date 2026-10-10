@@ -40,4 +40,7 @@ contextBridge.exposeInMainWorld('api', {
   saveSettings: settings => ipcRenderer.invoke('save-settings', settings),
   testApi: apiUrl => ipcRenderer.invoke('test-api', apiUrl),
   showDataFile: () => ipcRenderer.invoke('show-data-file'),
+
+  // Avisar al proceso principal de cambios sin guardar (pregunta antes de cerrar la ventana)
+  setUnsavedChanges: value => ipcRenderer.send('set-unsaved-changes', value),
 });

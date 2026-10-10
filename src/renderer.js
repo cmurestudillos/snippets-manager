@@ -70,6 +70,7 @@ async function init() {
   setupEventListeners();
   setupSettingsListeners();
   setupShortcuts();
+  setupUnsavedChangesListeners();
   populateLanguageFilter();
 }
 
@@ -193,6 +194,9 @@ async function testApiConnection() {
 async function saveSettings() {
   const next = { storage: selectedStorage(), apiUrl: settingsElements.apiUrlInput.value.trim() };
   const changed = next.storage !== currentSettings.storage || next.apiUrl !== currentSettings.apiUrl;
+  if (changed && !confirmDiscardChanges()) {
+    return;
+  }
 
   const result = await window.api.saveSettings(next);
   if (!result.success) {
@@ -211,6 +215,7 @@ async function saveSettings() {
   elements.snippetView.style.display = 'none';
   elements.editView.style.display = 'none';
   elements.emptyState.style.display = 'flex';
+  clearFormSnapshot();
   await loadSnippets();
 }
 
@@ -354,6 +359,8 @@ function renderSnippetsList() {
 }
 
 function selectSnippet(id) {
+  if (!confirmDiscardChanges()) return;
+  clearFormSnapshot();
   selectedSnippet = snippets.find(s => s._id === id);
   if (!selectedSnippet) return;
 
@@ -415,6 +422,7 @@ async function updateRating(rating) {
 }
 
 function showNewSnippetView() {
+  if (!confirmDiscardChanges()) return;
   editingSnippet = null;
   elements.editTitle.textContent = 'Nuevo Snippet';
   elements.formDescription.value = '';
@@ -428,6 +436,7 @@ function showNewSnippetView() {
   elements.snippetView.style.display = 'none';
   elements.editView.style.display = 'block';
   elements.formDescription.focus();
+  takeFormSnapshot();
 }
 
 function showEditSnippetView() {
@@ -446,6 +455,7 @@ function showEditSnippetView() {
   elements.snippetView.style.display = 'none';
   elements.editView.style.display = 'block';
   elements.formDescription.focus();
+  takeFormSnapshot();
 }
 
 function updateStarsInput() {
@@ -479,6 +489,7 @@ async function saveSnippet(event) {
   const result = editingSnippet ? await updateExistingSnippet(snippetData) : await createNewSnippet(snippetData);
 
   if (result.success) {
+    clearFormSnapshot();
     populateLanguageFilter();
     applyFilters();
     if (selectedSnippet) {
@@ -517,6 +528,8 @@ async function createNewSnippet(snippetData) {
 }
 
 function cancelEdit() {
+  if (!confirmDiscardChanges()) return;
+  clearFormSnapshot();
   if (selectedSnippet) {
     showSnippetView();
     renderSelectedSnippet();
@@ -720,6 +733,7 @@ function setupEventListeners() {
     star.addEventListener('click', () => {
       currentRating = index + 1;
       elements.formRating.value = currentRating;
+      notifyUnsavedChanges();
       updateStarsInput();
     });
 
@@ -735,6 +749,56 @@ function setupEventListeners() {
   });
 
   elements.starsInput.addEventListener('mouseleave', updateStarsInput);
+}
+
+// ============================================
+// CAMBIOS SIN GUARDAR EN EL FORMULARIO
+// ============================================
+// Valores del formulario al abrirlo; si cambian se pide confirmación antes de descartarlos
+let formSnapshot = null;
+let notifiedUnsaved = false;
+
+const readForm = () =>
+  JSON.stringify([
+    elements.formDescription.value,
+    elements.formLanguage.value,
+    elements.formCode.value,
+    elements.formRating.value,
+  ]);
+
+function hasUnsavedChanges() {
+  return formSnapshot !== null && elements.editView.style.display === 'block' && readForm() !== formSnapshot;
+}
+
+// El proceso principal pregunta antes de cerrar la ventana si hay cambios
+function notifyUnsavedChanges() {
+  const unsaved = hasUnsavedChanges();
+  if (unsaved !== notifiedUnsaved) {
+    notifiedUnsaved = unsaved;
+    window.api.setUnsavedChanges(unsaved);
+  }
+}
+
+function takeFormSnapshot() {
+  formSnapshot = readForm();
+  notifyUnsavedChanges();
+}
+
+function clearFormSnapshot() {
+  formSnapshot = null;
+  notifyUnsavedChanges();
+}
+
+function confirmDiscardChanges() {
+  return !hasUnsavedChanges() || confirm('El snippet tiene cambios sin guardar. ¿Quieres descartarlos?');
+}
+
+function setupUnsavedChangesListeners() {
+  // Tras recargar la ventana (Ctrl+R) no queda ningún formulario abierto
+  window.api.setUnsavedChanges(false);
+  elements.formDescription.addEventListener('input', notifyUnsavedChanges);
+  elements.formCode.addEventListener('input', notifyUnsavedChanges);
+  elements.formLanguage.addEventListener('change', notifyUnsavedChanges);
 }
 
 // ============================================

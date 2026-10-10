@@ -9,6 +9,8 @@ const { loadSettings, saveSettings, isValidApiUrl } = require('./settings');
 let mainWindow;
 let settings;
 let store;
+// El renderer avisa si el formulario tiene cambios sin guardar (se pregunta al cerrar la ventana)
+let hasUnsavedChanges = false;
 
 const settingsFile = () => path.join(app.getPath('userData'), 'settings.json');
 const localFile = () => path.join(app.getPath('userData'), 'snippets.json');
@@ -36,6 +38,26 @@ function createWindow() {
   mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   mainWindow.webContents.on('will-navigate', event => event.preventDefault());
 
+  mainWindow.on('close', event => {
+    if (!hasUnsavedChanges) {
+      return;
+    }
+    const choice = dialog.showMessageBoxSync(mainWindow, {
+      type: 'warning',
+      buttons: ['Descartar y salir', 'Cancelar'],
+      defaultId: 1,
+      cancelId: 1,
+      title: 'Cambios sin guardar',
+      message: 'El snippet que estás editando tiene cambios sin guardar.',
+      detail: 'Si sales ahora se perderán.',
+    });
+    if (choice === 1) {
+      event.preventDefault();
+    } else {
+      hasUnsavedChanges = false;
+    }
+  });
+
   mainWindow.loadFile(path.join(__dirname, 'index.html'));
 
   // Abrir DevTools en modo desarrollo
@@ -60,6 +82,10 @@ app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }
+});
+
+ipcMain.on('set-unsaved-changes', (event, value) => {
+  hasUnsavedChanges = Boolean(value);
 });
 
 // ============================================
