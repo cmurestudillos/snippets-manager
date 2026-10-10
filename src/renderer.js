@@ -177,10 +177,8 @@ async function loadSnippets() {
 
   if (result.success) {
     snippets = result.data;
-    filteredSnippets = [...snippets];
-    renderSnippetsList();
-    updateSnippetCount();
     populateLanguageFilter();
+    applyFilters();
     showToast('Snippets cargados correctamente', 'success');
   } else {
     showToast('Error al cargar snippets: ' + result.error, 'error');
@@ -200,10 +198,10 @@ function renderSnippetsList() {
   elements.snippetsList.innerHTML = filteredSnippets
     .map(
       snippet => `
-    <div class="snippet-item ${selectedSnippet?._id === snippet._id ? 'active' : ''}" data-id="${snippet._id}">
+    <div class="snippet-item ${selectedSnippet?._id === snippet._id ? 'active' : ''}" data-id="${escapeHtml(snippet._id)}">
       <div class="snippet-item-header">
         <span class="snippet-item-title">${escapeHtml(snippet.description)}</span>
-        <span class="language-badge">${snippet.language}</span>
+        <span class="language-badge">${escapeHtml(snippet.language)}</span>
       </div>
       <div class="snippet-item-preview">${escapeHtml(snippet.code.substring(0, 60))}...</div>
       <div class="snippet-item-footer">
@@ -347,6 +345,7 @@ async function saveSnippet(event) {
   const result = editingSnippet ? await updateExistingSnippet(snippetData) : await createNewSnippet(snippetData);
 
   if (result.success) {
+    populateLanguageFilter();
     applyFilters();
     if (selectedSnippet) {
       showSnippetView();
@@ -404,6 +403,7 @@ async function deleteSnippet() {
   if (result.success) {
     snippets = snippets.filter(s => s._id !== selectedSnippet._id);
     selectedSnippet = null;
+    populateLanguageFilter();
     applyFilters();
     elements.snippetView.style.display = 'none';
     elements.emptyState.style.display = 'flex';
@@ -530,7 +530,7 @@ function populateLanguageFilter() {
 
   elements.languageFilter.innerHTML =
     '<option value="">Todos los lenguajes</option>' +
-    languages.map(lang => `<option value="${lang}">${lang}</option>`).join('');
+    languages.map(lang => `<option value="${escapeHtml(lang)}">${escapeHtml(lang)}</option>`).join('');
 
   elements.languageFilter.value = currentValue;
 }
@@ -551,10 +551,11 @@ function showToast(message, type = 'info') {
   }, 3000);
 }
 
+const HTML_ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+
+// También escapa comillas: se usa dentro de atributos (value, data-id)
 function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
+  return String(text ?? '').replace(/[&<>"']/g, char => HTML_ESCAPES[char]);
 }
 
 function formatDate(dateString) {
