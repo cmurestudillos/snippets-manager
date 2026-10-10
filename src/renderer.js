@@ -69,6 +69,7 @@ async function init() {
   await loadSnippets();
   setupEventListeners();
   setupSettingsListeners();
+  setupShortcuts();
   populateLanguageFilter();
 }
 
@@ -426,6 +427,7 @@ function showNewSnippetView() {
   elements.emptyState.style.display = 'none';
   elements.snippetView.style.display = 'none';
   elements.editView.style.display = 'block';
+  elements.formDescription.focus();
 }
 
 function showEditSnippetView() {
@@ -443,6 +445,7 @@ function showEditSnippetView() {
   elements.emptyState.style.display = 'none';
   elements.snippetView.style.display = 'none';
   elements.editView.style.display = 'block';
+  elements.formDescription.focus();
 }
 
 function updateStarsInput() {
@@ -732,6 +735,68 @@ function setupEventListeners() {
   });
 
   elements.starsInput.addEventListener('mouseleave', updateStarsInput);
+}
+
+// ============================================
+// ATAJOS DE TECLADO
+// ============================================
+const isMac = navigator.userAgent.includes('Mac');
+const MOD_LABEL = isMac ? '⌘' : 'Ctrl+';
+
+const isShown = element => element.style.display === 'block';
+
+function isSettingsOpen() {
+  return !settingsElements.modal.hidden;
+}
+
+function focusSearch() {
+  elements.searchInput.focus();
+  elements.searchInput.select();
+}
+
+// Ctrl/⌘+N nuevo · Ctrl/⌘+F buscar · Ctrl/⌘+S guardar · Ctrl/⌘+E editar · Esc cancelar / limpiar búsqueda
+const SHORTCUTS = {
+  n: () => showNewSnippetView(),
+  f: () => focusSearch(),
+  s: event => isShown(elements.editView) && saveSnippet(event),
+  e: () => isShown(elements.snippetView) && showEditSnippetView(),
+};
+
+function handleEscape(event) {
+  if (document.activeElement === elements.searchInput && elements.searchInput.value) {
+    elements.searchInput.value = '';
+    applyFilters();
+  } else if (isShown(elements.editView)) {
+    event.preventDefault();
+    cancelEdit();
+  }
+}
+
+function handleShortcut(event) {
+  // El modal de Ajustes gestiona su propio Escape
+  if (isSettingsOpen()) {
+    return;
+  }
+  if (event.key === 'Escape') {
+    handleEscape(event);
+    return;
+  }
+  const modifier = isMac ? event.metaKey : event.ctrlKey;
+  const action = SHORTCUTS[event.key.toLowerCase()];
+  if (!modifier || event.altKey || event.shiftKey || !action) {
+    return;
+  }
+  event.preventDefault();
+  action(event);
+}
+
+function setupShortcuts() {
+  elements.newSnippetBtn.title = `Nuevo snippet (${MOD_LABEL}N)`;
+  elements.searchInput.title = `Buscar (${MOD_LABEL}F)`;
+  elements.saveBtn.title = `Guardar (${MOD_LABEL}S)`;
+  elements.editBtn.title = `Editar (${MOD_LABEL}E)`;
+  elements.cancelBtn.title = 'Cancelar (Esc)';
+  document.addEventListener('keydown', handleShortcut);
 }
 
 // ============================================
