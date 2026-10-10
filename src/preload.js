@@ -35,10 +35,10 @@ contextBridge.exposeInMainWorld('api', {
 
   // ========== Ajustes ==========
 
-  // { storage: 'local' | 'api', apiUrl, localFile, version }
+  // { storage: 'local' | 'api', apiUrl, apiToken, localFile, version }
   getSettings: () => ipcRenderer.invoke('get-settings'),
   saveSettings: settings => ipcRenderer.invoke('save-settings', settings),
-  testApi: apiUrl => ipcRenderer.invoke('test-api', apiUrl),
+  testApi: (apiUrl, apiToken) => ipcRenderer.invoke('test-api', apiUrl, apiToken),
   showDataFile: () => ipcRenderer.invoke('show-data-file'),
 
   // Avisar al proceso principal de cambios sin guardar (pregunta antes de cerrar la ventana)

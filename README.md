@@ -25,8 +25,8 @@ conexión) o en **tu propia API**.
 
 - **Almacenamiento local por defecto**: `snippets.json` en la carpeta de datos de la app (en Windows
   `%APPDATA%\snippets-manager\`). Sin red ni cuentas. Si el archivo se daña, la app avisa y no lo sobrescribe.
-- **API remota opcional** (⚙️ Ajustes): cualquier servidor compatible con `snippets-manager-backend`, con botón para
-  probar la conexión.
+- **API remota opcional** (⚙️ Ajustes): cualquier servidor compatible con `snippets-manager-backend`, con token
+  opcional y botón para probar la conexión.
 - **Resaltado de sintaxis** con highlight.js incluido en la app (sin CDN), tema oscuro y claro.
 - **Búsqueda** por descripción y código, **filtro por lenguaje** y **rating** de 1 a 5 estrellas.
 - **Importar / exportar** toda la colección en JSON (importación en lote; en modo API, una sola petición a
@@ -88,7 +88,12 @@ docs/                  # landing (GitHub Pages), no se incluye en el instalador
 Si usas el modo API, el servidor (URL base, p. ej. `https://mi-servidor.com/api/snippets`) debe responder a
 `GET /` → `{ "snippets": [...] }`, `POST /` y `PUT /:id` → `{ "snippet": {...} }`, `PATCH /:id/rating`,
 `DELETE /:id` y, opcionalmente, `POST /importar`. El backend de referencia ignora `rating` en POST/PUT, así que la app
-lo guarda con `PATCH`. **No tiene autenticación**: no lo expongas en Internet con datos que no quieras compartir.
+lo guarda con `PATCH`.
+
+Si pones un **token** en Ajustes, la app lo manda en cada petición como `Authorization: Bearer <token>`; el backend de
+referencia lo exige y lo compara con su variable `API_TOKEN`. El token se guarda cifrado en `settings.json` con
+`safeStorage` de Electron (DPAPI en Windows, Llavero en macOS, libsecret en Linux), o en claro si el sistema no ofrece
+cifrado.
 
 Cambiar de almacenamiento no mueve los snippets: expórtalos (📤) antes e impórtalos (📥) después.
 

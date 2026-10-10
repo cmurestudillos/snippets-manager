@@ -870,7 +870,8 @@ body[data-theme='dark'] .code-header {
   align-self: flex-start;
 }
 
-.storage-detail input[type='url'] {
+.storage-detail input[type='url'],
+.storage-detail input[type='password'] {
   padding: 10px 12px;
   background-color: var(--bg-light);
   border: 2px solid var(--border-color);
@@ -880,7 +881,8 @@ body[data-theme='dark'] .code-header {
   font-family: inherit;
 }
 
-.storage-detail input[type='url']:focus {
+.storage-detail input[type='url']:focus,
+.storage-detail input[type='password']:focus {
   outline: none;
   border-color: var(--primary-color);
 }
