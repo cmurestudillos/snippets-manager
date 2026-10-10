@@ -16,7 +16,7 @@ const settingsFile = () => path.join(app.getPath('userData'), 'settings.json');
 const localFile = () => path.join(app.getPath('userData'), 'snippets.json');
 
 function createStore(current) {
-  return current.storage === 'api' ? new ApiStore(current.apiUrl) : new LocalStore(localFile());
+  return current.storage === 'api' ? new ApiStore(current.apiUrl, current.apiToken) : new LocalStore(localFile());
 }
 
 function createWindow() {
@@ -137,13 +137,13 @@ ipcMain.handle('save-settings', async (event, next) => {
   }
 });
 
-// Comprueba una URL sin cambiar los ajustes: GET y respuesta con { snippets: [...] }
-ipcMain.handle('test-api', async (event, apiUrl) => {
+// Comprueba una URL y un token sin cambiar los ajustes: GET y respuesta con { snippets: [...] }
+ipcMain.handle('test-api', async (event, apiUrl, apiToken) => {
   if (!isValidApiUrl(apiUrl)) {
     return { success: false, error: 'La URL debe empezar por http:// o https://' };
   }
   try {
-    const snippets = await new ApiStore(apiUrl).list();
+    const snippets = await new ApiStore(apiUrl, apiToken).list();
     return { success: true, data: snippets.length };
   } catch (error) {
     return { success: false, error: describeError(error) };

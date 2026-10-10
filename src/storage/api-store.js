@@ -3,9 +3,12 @@ const axios = require('axios');
 const { toSnippetFields } = require('./validate');
 
 class ApiStore {
-  constructor(baseUrl) {
+  constructor(baseUrl, token) {
     this.baseUrl = baseUrl.replace(/\/+$/, '');
-    this.http = axios.create({ timeout: 15000 });
+    this.http = axios.create({
+      timeout: 15000,
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
   }
 
   async list() {
@@ -67,7 +70,12 @@ class ApiStore {
 // Mensaje legible para los errores de axios (estado HTTP + texto del backend)
 function describeError(error) {
   if (error.response) {
-    const body = typeof error.response.data === 'string' ? error.response.data : '';
+    if (error.response.status === 401) {
+      return 'HTTP 401: el token de la API no es válido';
+    }
+    // El backend responde { msg } o texto plano
+    const data = error.response.data;
+    const body = typeof data === 'string' ? data : typeof data?.msg === 'string' ? data.msg : '';
     return `HTTP ${error.response.status}${body ? `: ${body.slice(0, 200)}` : ''}`;
   }
   if (error.code === 'ECONNABORTED') {

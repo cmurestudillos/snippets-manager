@@ -125,6 +125,7 @@ const settingsElements = {
   showDataFileBtn: document.getElementById('show-data-file-btn'),
   apiDetail: document.getElementById('api-detail'),
   apiUrlInput: document.getElementById('api-url-input'),
+  apiTokenInput: document.getElementById('api-token-input'),
   testApiBtn: document.getElementById('test-api-btn'),
   apiTestResult: document.getElementById('api-test-result'),
   appVersion: document.getElementById('app-version'),
@@ -132,7 +133,7 @@ const settingsElements = {
   saveBtn: document.getElementById('settings-save-btn'),
 };
 
-let currentSettings = { storage: 'local', apiUrl: '' };
+let currentSettings = { storage: 'local', apiUrl: '', apiToken: '' };
 
 function renderStorageBadge() {
   const isApi = currentSettings.storage === 'api';
@@ -163,6 +164,7 @@ async function openSettings() {
     radio.checked = radio.value === currentSettings.storage;
   });
   settingsElements.apiUrlInput.value = currentSettings.apiUrl;
+  settingsElements.apiTokenInput.value = currentSettings.apiToken;
   settingsElements.localFilePath.textContent = currentSettings.localFile;
   settingsElements.appVersion.textContent = `Snippets Manager Pro v${currentSettings.version}`;
   settingsElements.apiTestResult.textContent = '';
@@ -181,7 +183,10 @@ async function testApiConnection() {
   const result = settingsElements.apiTestResult;
   result.className = 'api-test-result';
   result.textContent = 'Conectando...';
-  const response = await window.api.testApi(settingsElements.apiUrlInput.value.trim());
+  const response = await window.api.testApi(
+    settingsElements.apiUrlInput.value.trim(),
+    settingsElements.apiTokenInput.value.trim()
+  );
   if (response.success) {
     result.classList.add('ok');
     result.textContent = `✓ Conectado: ${response.data} snippets`;
@@ -192,8 +197,15 @@ async function testApiConnection() {
 }
 
 async function saveSettings() {
-  const next = { storage: selectedStorage(), apiUrl: settingsElements.apiUrlInput.value.trim() };
-  const changed = next.storage !== currentSettings.storage || next.apiUrl !== currentSettings.apiUrl;
+  const next = {
+    storage: selectedStorage(),
+    apiUrl: settingsElements.apiUrlInput.value.trim(),
+    apiToken: settingsElements.apiTokenInput.value.trim(),
+  };
+  const changed =
+    next.storage !== currentSettings.storage ||
+    next.apiUrl !== currentSettings.apiUrl ||
+    next.apiToken !== currentSettings.apiToken;
   if (changed && !confirmDiscardChanges()) {
     return;
   }
@@ -226,9 +238,11 @@ function setupSettingsListeners() {
   settingsElements.testApiBtn.addEventListener('click', testApiConnection);
   settingsElements.showDataFileBtn.addEventListener('click', () => window.api.showDataFile());
   settingsElements.radios.forEach(radio => radio.addEventListener('change', updateStorageDetails));
-  settingsElements.apiUrlInput.addEventListener('input', () => {
-    settingsElements.apiTestResult.textContent = '';
-  });
+  [settingsElements.apiUrlInput, settingsElements.apiTokenInput].forEach(input =>
+    input.addEventListener('input', () => {
+      settingsElements.apiTestResult.textContent = '';
+    })
+  );
   // Clic fuera del diálogo o Escape: cerrar sin guardar
   settingsElements.modal.addEventListener('click', event => {
     if (event.target === settingsElements.modal) {
