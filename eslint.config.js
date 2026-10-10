@@ -19,7 +19,7 @@ module.exports = [
     ignores: ['dist/**', 'build/**', 'release/**', 'coverage/**', 'node_modules/**', '**/*.min.js'],
   },
   {
-    files: ['src/main.js', 'src/preload.js'],
+    files: ['src/main.js', 'src/preload.js', 'src/settings.js', 'src/storage/**/*.js'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'commonjs',

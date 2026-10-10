@@ -65,8 +65,10 @@ const elements = {
 // ============================================
 async function init() {
   loadThemePreference();
+  await loadSettings();
   await loadSnippets();
   setupEventListeners();
+  setupSettingsListeners();
   populateLanguageFilter();
 }
 
@@ -106,6 +108,133 @@ function toggleTheme() {
   const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
   setTheme(newTheme);
   showToast(`Tema ${newTheme === 'dark' ? 'oscuro' : 'claro'} activado`, 'success');
+}
+
+// ============================================
+// AJUSTES: ALMACENAMIENTO LOCAL O API
+// ============================================
+const settingsElements = {
+  button: document.getElementById('settings-btn'),
+  modal: document.getElementById('settings-modal'),
+  storageBadge: document.getElementById('storage-badge'),
+  radios: document.querySelectorAll('input[name="storage"]'),
+  localDetail: document.getElementById('local-detail'),
+  localFilePath: document.getElementById('local-file-path'),
+  showDataFileBtn: document.getElementById('show-data-file-btn'),
+  apiDetail: document.getElementById('api-detail'),
+  apiUrlInput: document.getElementById('api-url-input'),
+  testApiBtn: document.getElementById('test-api-btn'),
+  apiTestResult: document.getElementById('api-test-result'),
+  appVersion: document.getElementById('app-version'),
+  cancelBtn: document.getElementById('settings-cancel-btn'),
+  saveBtn: document.getElementById('settings-save-btn'),
+};
+
+let currentSettings = { storage: 'local', apiUrl: '' };
+
+function renderStorageBadge() {
+  const isApi = currentSettings.storage === 'api';
+  settingsElements.storageBadge.textContent = isApi ? '☁️ API' : '💻 Local';
+  settingsElements.storageBadge.title = isApi
+    ? `Guardados en la API: ${currentSettings.apiUrl}`
+    : 'Guardados en este equipo';
+}
+
+async function loadSettings() {
+  currentSettings = await window.api.getSettings();
+  renderStorageBadge();
+}
+
+function selectedStorage() {
+  return [...settingsElements.radios].find(radio => radio.checked)?.value || 'local';
+}
+
+function updateStorageDetails() {
+  const storage = selectedStorage();
+  settingsElements.localDetail.hidden = storage !== 'local';
+  settingsElements.apiDetail.hidden = storage !== 'api';
+}
+
+async function openSettings() {
+  await loadSettings();
+  settingsElements.radios.forEach(radio => {
+    radio.checked = radio.value === currentSettings.storage;
+  });
+  settingsElements.apiUrlInput.value = currentSettings.apiUrl;
+  settingsElements.localFilePath.textContent = currentSettings.localFile;
+  settingsElements.appVersion.textContent = `Snippets Manager Pro v${currentSettings.version}`;
+  settingsElements.apiTestResult.textContent = '';
+  settingsElements.apiTestResult.className = 'api-test-result';
+  updateStorageDetails();
+  settingsElements.modal.hidden = false;
+  settingsElements.saveBtn.focus();
+}
+
+function closeSettings() {
+  settingsElements.modal.hidden = true;
+  settingsElements.button.focus();
+}
+
+async function testApiConnection() {
+  const result = settingsElements.apiTestResult;
+  result.className = 'api-test-result';
+  result.textContent = 'Conectando...';
+  const response = await window.api.testApi(settingsElements.apiUrlInput.value.trim());
+  if (response.success) {
+    result.classList.add('ok');
+    result.textContent = `✓ Conectado: ${response.data} snippets`;
+  } else {
+    result.classList.add('error');
+    result.textContent = `✗ ${response.error}`;
+  }
+}
+
+async function saveSettings() {
+  const next = { storage: selectedStorage(), apiUrl: settingsElements.apiUrlInput.value.trim() };
+  const changed = next.storage !== currentSettings.storage || next.apiUrl !== currentSettings.apiUrl;
+
+  const result = await window.api.saveSettings(next);
+  if (!result.success) {
+    showToast(result.error, 'error');
+    return;
+  }
+  closeSettings();
+  if (!changed) {
+    return;
+  }
+
+  // Otro almacenamiento: otra lista de snippets
+  await loadSettings();
+  selectedSnippet = null;
+  editingSnippet = null;
+  elements.snippetView.style.display = 'none';
+  elements.editView.style.display = 'none';
+  elements.emptyState.style.display = 'flex';
+  await loadSnippets();
+}
+
+function setupSettingsListeners() {
+  settingsElements.button.addEventListener('click', openSettings);
+  settingsElements.cancelBtn.addEventListener('click', closeSettings);
+  settingsElements.saveBtn.addEventListener('click', saveSettings);
+  settingsElements.testApiBtn.addEventListener('click', testApiConnection);
+  settingsElements.showDataFileBtn.addEventListener('click', () => window.api.showDataFile());
+  settingsElements.radios.forEach(radio => radio.addEventListener('change', updateStorageDetails));
+  settingsElements.apiUrlInput.addEventListener('input', () => {
+    settingsElements.apiTestResult.textContent = '';
+  });
+  // Clic fuera del diálogo o Escape: cerrar sin guardar
+  settingsElements.modal.addEventListener('click', event => {
+    if (event.target === settingsElements.modal) {
+      closeSettings();
+    }
+  });
+  settingsElements.modal.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+      event.stopPropagation();
+      closeSettings();
+    }
+  });
 }
 
 // ============================================
@@ -451,6 +580,9 @@ async function importSnippets() {
 
   if (result.success) {
     const importedSnippets = result.data;
+    const skippedNote = result.skipped
+      ? `\n\nSe descartarán ${result.skipped} elementos sin descripción, lenguaje o código.`
+      : '';
 
     if (!Array.isArray(importedSnippets) || importedSnippets.length === 0) {
       showToast('El archivo no contiene snippets válidos', 'warning');
@@ -459,33 +591,20 @@ async function importSnippets() {
 
     const confirmed = confirm(
       `¿Deseas importar ${importedSnippets.length} snippets?\n\n` +
-        `Esto NO eliminará tus snippets actuales, solo agregará los nuevos.`
+        `Esto NO eliminará tus snippets actuales, solo agregará los nuevos.` +
+        skippedNote
     );
 
     if (!confirmed) return;
 
-    // Crear cada snippet en la API
-    let successCount = 0;
-    let errorCount = 0;
-
-    for (const snippet of importedSnippets) {
-      // Remover el _id y __v de MongoDB si existe
-      const { _id, __v, ...snippetData } = snippet;
-
-      const createResult = await window.api.createSnippet(snippetData);
-      if (createResult.success) {
-        successCount++;
-      } else {
-        errorCount++;
-      }
-    }
-
+    // Todos de una vez (en modo API, una sola petición a POST /importar)
+    const batchResult = await window.api.importBatch(importedSnippets);
     await loadSnippets();
 
-    if (errorCount === 0) {
-      showToast(`${successCount} snippets importados correctamente`, 'success');
+    if (batchResult.success) {
+      showToast(`${batchResult.data} snippets importados correctamente`, 'success');
     } else {
-      showToast(`Importación completada: ${successCount} exitosos, ${errorCount} errores`, 'warning');
+      showToast('Error al importar snippets: ' + batchResult.error, 'error');
     }
   } else if (!result.cancelled) {
     showToast('Error al importar snippets: ' + result.error, 'error');

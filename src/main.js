@@ -1,11 +1,21 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs').promises;
-const axios = require('axios');
-
-const API_URL = 'https://snippets-manager-service.vercel.app/api/snippets';
+const { LocalStore } = require('./storage/local-store');
+const { ApiStore, describeError } = require('./storage/api-store');
+const { prepareImport } = require('./storage/validate');
+const { loadSettings, saveSettings, isValidApiUrl } = require('./settings');
 
 let mainWindow;
+let settings;
+let store;
+
+const settingsFile = () => path.join(app.getPath('userData'), 'settings.json');
+const localFile = () => path.join(app.getPath('userData'), 'snippets.json');
+
+function createStore(current) {
+  return current.storage === 'api' ? new ApiStore(current.apiUrl) : new LocalStore(localFile());
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -34,7 +44,11 @@ function createWindow() {
   }
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(async () => {
+  settings = await loadSettings(settingsFile());
+  store = createStore(settings);
+  createWindow();
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
@@ -52,76 +66,76 @@ app.on('activate', () => {
 // IPC Handlers para CRUD operations
 // ============================================
 
-// GET - Obtener todos los snippets
-ipcMain.handle('get-snippets', async () => {
-  try {
-    const response = await axios.get(API_URL);
-    return { success: true, data: response.data.snippets };
-  } catch (error) {
-    console.error('Error fetching snippets:', error);
-    return { success: false, error: error.message };
-  }
-});
-
-// El backend ignora "rating" en POST y PUT: solo lo guarda PATCH /:id/rating
-async function saveRating(snippet, rating) {
-  if (rating === undefined || rating === (snippet.rating || 0)) {
-    return snippet;
-  }
-  const response = await axios.patch(`${API_URL}/${snippet._id}/rating`, { rating });
-  return response.data.snippet;
+// Todas las operaciones devuelven { success, data } o { success: false, error }
+function handleStore(channel, action) {
+  ipcMain.handle(channel, async (event, ...args) => {
+    try {
+      return { success: true, data: await action(...args) };
+    } catch (error) {
+      console.error(`Error en ${channel}:`, error.message);
+      return { success: false, error: describeError(error) };
+    }
+  });
 }
 
-// POST - Crear nuevo snippet
-ipcMain.handle('create-snippet', async (event, snippetData) => {
+handleStore('get-snippets', () => store.list());
+handleStore('create-snippet', snippetData => store.create(snippetData));
+handleStore('update-snippet', (id, snippetData) => store.update(id, snippetData));
+handleStore('delete-snippet', id => store.remove(id));
+handleStore('update-rating', (id, rating) => store.setRating(id, rating));
+handleStore('import-batch', async items => {
+  const { valid } = prepareImport(items);
+  return store.importMany(valid);
+});
+
+// ============================================
+// Ajustes: almacenamiento local o API remota
+// ============================================
+
+ipcMain.handle('get-settings', () => ({
+  ...settings,
+  localFile: localFile(),
+  version: app.getVersion(),
+}));
+
+ipcMain.handle('save-settings', async (event, next) => {
+  if (next?.storage === 'api' && !isValidApiUrl(next.apiUrl)) {
+    return { success: false, error: 'La URL de la API debe empezar por http:// o https://' };
+  }
   try {
-    const { rating, ...fields } = snippetData;
-    const response = await axios.post(API_URL, fields);
-    const snippet = await saveRating(response.data.snippet, rating);
-    return { success: true, data: snippet };
+    settings = await saveSettings(settingsFile(), next);
+    store = createStore(settings);
+    return { success: true, data: settings };
   } catch (error) {
-    console.error('Error creating snippet:', error);
     return { success: false, error: error.message };
   }
 });
 
-// PUT - Actualizar snippet
-ipcMain.handle('update-snippet', async (event, id, snippetData) => {
+// Comprueba una URL sin cambiar los ajustes: GET y respuesta con { snippets: [...] }
+ipcMain.handle('test-api', async (event, apiUrl) => {
+  if (!isValidApiUrl(apiUrl)) {
+    return { success: false, error: 'La URL debe empezar por http:// o https://' };
+  }
   try {
-    const { rating, ...fields } = snippetData;
-    const response = await axios.put(`${API_URL}/${id}`, fields);
-    const snippet = await saveRating(response.data.snippet, rating);
-    return { success: true, data: snippet };
+    const snippets = await new ApiStore(apiUrl).list();
+    return { success: true, data: snippets.length };
   } catch (error) {
-    console.error('Error updating snippet:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: describeError(error) };
   }
 });
 
-// DELETE - Eliminar snippet
-ipcMain.handle('delete-snippet', async (event, id) => {
+ipcMain.handle('show-data-file', async () => {
   try {
-    await axios.delete(`${API_URL}/${id}`);
-    return { success: true };
-  } catch (error) {
-    console.error('Error deleting snippet:', error);
-    return { success: false, error: error.message };
-  }
-});
-
-// UPDATE - Rating
-ipcMain.handle('update-rating', async (event, id, rating) => {
-  try {
-    const response = await axios.patch(`${API_URL}/${id}/rating`, { rating });
-    return { success: true, data: response.data };
-  } catch (error) {
-    console.error('Error updating rating:', error);
-    return { success: false, error: error.message };
+    await fs.access(localFile());
+    shell.showItemInFolder(localFile());
+  } catch {
+    // Todavía no hay snippets locales: se abre la carpeta
+    await shell.openPath(app.getPath('userData'));
   }
 });
 
 // ============================================
-// NUEVAS FUNCIONALIDADES: Import/Export
+// Import/Export
 // ============================================
 
 // EXPORT - Exportar snippets a archivo JSON
@@ -148,7 +162,7 @@ ipcMain.handle('export-snippets', async (event, snippets) => {
   }
 });
 
-// IMPORT - Importar snippets desde archivo JSON
+// IMPORT - Leer snippets de un archivo JSON (se guardan después con import-batch)
 ipcMain.handle('import-snippets', async () => {
   try {
     const { filePaths } = await dialog.showOpenDialog(mainWindow, {
@@ -172,7 +186,8 @@ ipcMain.handle('import-snippets', async () => {
       throw new Error('El archivo no contiene un formato válido');
     }
 
-    return { success: true, data: snippets };
+    const { valid, skipped } = prepareImport(snippets);
+    return { success: true, data: valid, skipped };
   } catch (error) {
     console.error('Error importing snippets:', error);
     return { success: false, error: error.message };

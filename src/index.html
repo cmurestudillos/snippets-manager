@@ -46,8 +46,12 @@
             <button id="import-btn" class="btn btn-icon" title="Importar">📥</button>
             <button id="export-btn" class="btn btn-icon" title="Exportar">📤</button>
             <button id="theme-toggle-btn" class="btn btn-icon" title="Cambiar tema">🌓</button>
+            <button id="settings-btn" class="btn btn-icon" title="Ajustes">⚙️</button>
           </div>
-          <div class="snippet-count"><span id="snippet-count">0</span> snippets</div>
+          <div class="snippet-count">
+            <span id="snippet-count">0</span> snippets
+            <span id="storage-badge" class="storage-badge" title="Dónde se guardan los snippets"></span>
+          </div>
         </div>
       </aside>
 
@@ -181,6 +185,58 @@
           </form>
         </div>
       </main>
+    </div>
+
+    <!-- Ajustes: dónde se guardan los snippets -->
+    <div id="settings-modal" class="modal" hidden>
+      <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+        <h2 id="settings-title">⚙️ Ajustes</h2>
+
+        <fieldset class="settings-group">
+          <legend>Dónde se guardan los snippets</legend>
+
+          <label class="storage-option">
+            <input type="radio" name="storage" value="local" />
+            <span>
+              <strong>💻 En este equipo</strong>
+              <small>Un archivo JSON local. Funciona sin conexión y nadie más tiene acceso.</small>
+            </span>
+          </label>
+          <div class="storage-detail" id="local-detail">
+            <code id="local-file-path"></code>
+            <button type="button" id="show-data-file-btn" class="btn btn-small">📂 Mostrar archivo</button>
+          </div>
+
+          <label class="storage-option">
+            <input type="radio" name="storage" value="api" />
+            <span>
+              <strong>☁️ API remota</strong>
+              <small>Un servidor compatible con snippets-manager-backend, para compartirlos entre equipos.</small>
+            </span>
+          </label>
+          <div class="storage-detail" id="api-detail">
+            <input
+              type="url"
+              id="api-url-input"
+              placeholder="https://mi-servidor.com/api/snippets"
+              spellcheck="false" />
+            <div class="api-test-row">
+              <button type="button" id="test-api-btn" class="btn btn-small">🔌 Probar conexión</button>
+              <span id="api-test-result" class="api-test-result"></span>
+            </div>
+          </div>
+        </fieldset>
+
+        <p class="settings-hint">
+          Cambiar de almacenamiento no mueve los snippets: expórtalos (📤) antes e impórtalos (📥) después.
+        </p>
+
+        <div class="modal-actions">
+          <span id="app-version" class="app-version"></span>
+          <button type="button" id="settings-cancel-btn" class="btn btn-secondary">Cancelar</button>
+          <button type="button" id="settings-save-btn" class="btn btn-primary">Guardar</button>
+        </div>
+      </div>
     </div>
 
     <!-- Toast notifications -->
