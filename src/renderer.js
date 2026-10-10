@@ -151,10 +151,12 @@ function highlightCode(code, language) {
     docker: 'dockerfile',
     http: 'http',
     graphql: 'graphql',
-    regex: 'regex',
+    regex: 'plaintext', // highlight.js no tiene gramática de expresiones regulares
   };
 
-  const hljsLanguage = languageMap[language.toLowerCase()] || 'plaintext';
+  const mapped = languageMap[String(language).toLowerCase()];
+  // Lenguajes sin gramática cargada (p. ej. "other"): texto plano en vez de un error en consola
+  const hljsLanguage = typeof hljs !== 'undefined' && mapped && hljs.getLanguage(mapped) ? mapped : 'plaintext';
 
   try {
     if (typeof hljs !== 'undefined') {

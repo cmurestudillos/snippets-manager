@@ -22,6 +22,10 @@ function createWindow() {
     icon: path.join(__dirname, 'assets/icons/icon.png'),
   });
 
+  // La ventana solo muestra index.html: ni ventanas nuevas ni navegación (p. ej. al soltar un archivo)
+  mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  mainWindow.webContents.on('will-navigate', event => event.preventDefault());
+
   mainWindow.loadFile(path.join(__dirname, 'index.html'));
 
   // Abrir DevTools en modo desarrollo

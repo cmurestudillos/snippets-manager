@@ -3,17 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'" />
     <title>Snippets Manager Pro</title>
 
-    <!-- Highlight.js CSS - Tema Oscuro por defecto -->
+    <!-- Highlight.js local (node_modules): resaltado sin conexión. Tema oscuro por defecto -->
+    <link rel="stylesheet" href="../node_modules/@highlightjs/cdn-assets/styles/atom-one-dark.min.css" id="hljs-dark" />
+    <!-- Tema claro (inicialmente desactivado) -->
     <link
       rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css"
-      id="hljs-dark" />
-    <!-- Highlight.js CSS - Tema Claro (inicialmente oculto) -->
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-light.min.css"
+      href="../node_modules/@highlightjs/cdn-assets/styles/atom-one-light.min.css"
       id="hljs-light"
       disabled />
 
@@ -64,7 +64,7 @@
         </div>
 
         <!-- Vista de snippet seleccionado -->
-        <div id="snippet-view" class="snippet-view" style="display: none">
+        <div id="snippet-view" class="snippet-view">
           <div class="snippet-header">
             <div class="snippet-title">
               <h2 id="snippet-description"></h2>
@@ -95,7 +95,7 @@
         </div>
 
         <!-- Vista de edición/creación -->
-        <div id="edit-view" class="edit-view" style="display: none">
+        <div id="edit-view" class="edit-view">
           <div class="edit-header">
             <h2 id="edit-title">Nuevo Snippet</h2>
             <div class="edit-actions">
@@ -186,8 +186,11 @@
     <!-- Toast notifications -->
     <div id="toast-container" class="toast-container"></div>
 
-    <!-- Highlight.js Library desde CDN -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <!-- Highlight.js (lenguajes comunes) + los que no incluye el paquete base -->
+    <script src="../node_modules/@highlightjs/cdn-assets/highlight.min.js"></script>
+    <script src="../node_modules/@highlightjs/cdn-assets/languages/powershell.min.js"></script>
+    <script src="../node_modules/@highlightjs/cdn-assets/languages/dockerfile.min.js"></script>
+    <script src="../node_modules/@highlightjs/cdn-assets/languages/http.min.js"></script>
 
     <!-- App Script -->
     <script src="renderer.js"></script>

@@ -321,7 +321,9 @@ body {
 /* ============================================
    SNIPPET VIEW
    ============================================ */
+/* Ocultas al inicio: el renderer las muestra con style.display (la CSP no permite style="" en el HTML) */
 .snippet-view {
+  display: none;
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -457,6 +459,7 @@ body {
    EDIT VIEW
    ============================================ */
 .edit-view {
+  display: none;
   max-width: 1200px;
   margin: 0 auto;
 }
