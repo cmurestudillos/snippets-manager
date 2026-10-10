@@ -1,322 +1,123 @@
-# 📝 Snippets Manager Pro v2.0
+# 📝 Snippets Manager Pro
 
-Aplicación de escritorio profesional creada con Electron para gestionar snippets de código con CRUD completo, syntax highlighting, temas personalizables y soporte para frameworks modernos.
+Aplicación de escritorio (Electron) para guardar, buscar y reutilizar snippets de código: resaltado de sintaxis para 30+
+lenguajes, búsqueda y filtro por lenguaje, rating, importar/exportar y almacenamiento **local** (por defecto, sin
+conexión) o en **tu propia API**.
 
-![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)
-![Electron](https://img.shields.io/badge/electron-27.0.0-brightgreen.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
+🌐 **Web y descargas:** https://cmurestudillos.github.io/snippets-manager/ · 📦
+[Versiones](https://github.com/cmurestudillos/snippets-manager/releases)
 
-## ✨ Características v2.0
+![Versión](https://img.shields.io/badge/versión-2.1.0-blue.svg)
+![Electron](https://img.shields.io/badge/electron-43-brightgreen.svg)
+![Licencia](https://img.shields.io/badge/licencia-MIT-green.svg)
 
-### 🎨 **Nuevas en v2.0**
-- ✅ **Syntax Highlighting**: Resaltado de sintaxis con Highlight.js para 30+ lenguajes
-- ✅ **Temas Personalizables**: Alterna entre tema oscuro y claro con un clic
-- ✅ **Exportar Snippets**: Exporta todos tus snippets a JSON o snippets individuales a archivos
-- ✅ **Importar Snippets**: Importa colecciones desde archivos JSON
-- ✅ **Soporte para Frameworks**: React, Vue.js, Angular, Node.js y más
+## Capturas
 
-### 🔥 **Características Core**
-- ✅ **CRUD Completo**: Crear, leer, actualizar y eliminar snippets
-- ✅ **Búsqueda en tiempo real**: Busca por descripción o código
-- ✅ **Filtrado por lenguaje**: Filtra snippets por lenguaje de programación
-- ✅ **Sistema de rating**: Califica tus snippets favoritos (1-5 estrellas)
-- ✅ **Copiar al portapapeles**: Copia el código con un solo clic
-- ✅ **Interfaz moderna**: Diseño profesional estilo VS Code
-- ✅ **Sincronización con API**: Conectado a tu endpoint de MongoDB
-- ✅ **Persistencia**: Todos los cambios se guardan automáticamente
+| Vista principal                                      | Edición                                          |
+| ---------------------------------------------------- | ------------------------------------------------ |
+| ![Vista principal](docs/assets/screenshots/01-principal.png) | ![Edición](docs/assets/screenshots/02-edicion.png) |
 
-## 🚀 Instalación
+| Filtro por lenguaje                                            | Ajustes                                          | Tema claro                                           |
+| -------------------------------------------------------------- | ------------------------------------------------ | ---------------------------------------------------- |
+| ![Filtro por lenguaje](docs/assets/screenshots/03-filtro-lenguaje.png) | ![Ajustes](docs/assets/screenshots/04-ajustes.png) | ![Tema claro](docs/assets/screenshots/05-tema-claro.png) |
 
-### Prerrequisitos
+## Características
 
-- Node.js (versión 16 o superior)
-- npm o yarn
+- **Almacenamiento local por defecto**: `snippets.json` en la carpeta de datos de la app (en Windows
+  `%APPDATA%\snippets-manager\`). Sin red ni cuentas. Si el archivo se daña, la app avisa y no lo sobrescribe.
+- **API remota opcional** (⚙️ Ajustes): cualquier servidor compatible con `snippets-manager-backend`, con botón para
+  probar la conexión.
+- **Resaltado de sintaxis** con highlight.js incluido en la app (sin CDN), tema oscuro y claro.
+- **Búsqueda** por descripción y código, **filtro por lenguaje** y **rating** de 1 a 5 estrellas.
+- **Importar / exportar** toda la colección en JSON (importación en lote; en modo API, una sola petición a
+  `POST /importar`) y **exportar un snippet** como archivo con su extensión y una cabecera comentada válida para su
+  lenguaje.
+- **Atajos de teclado** y **aviso de cambios sin guardar** (también al cerrar la ventana).
 
-### Pasos de instalación
+### Atajos de teclado
 
-1. **Clona o descarga el proyecto**
+| Acción                                                   | Atajo (en macOS, ⌘) |
+| -------------------------------------------------------- | ------------------- |
+| Nuevo snippet                                            | `Ctrl+N`            |
+| Buscar                                                   | `Ctrl+F`            |
+| Guardar (en el formulario)                               | `Ctrl+S`            |
+| Editar el snippet abierto                                | `Ctrl+E`            |
+| Cancelar la edición · limpiar la búsqueda · cerrar Ajustes | `Esc`             |
 
-2. **Navega al directorio del proyecto**:
-   ```bash
-   cd snippets-manager
-   ```
+## Instalación
 
-3. **Instala las dependencias**:
-   ```bash
-   npm install
-   ```
+Descarga el instalador de tu sistema desde la [web](https://cmurestudillos.github.io/snippets-manager/#/descargas):
+`.exe` (Windows), `.dmg` (macOS, Apple Silicon) o `.AppImage` (Linux). Los instaladores no están firmados: en Windows,
+_Más información → Ejecutar de todas formas_; en macOS, `xattr -cr "/Applications/Snippets Manager Pro.app"`; en
+Linux, `chmod +x Snippets-Manager-Pro-*.AppImage`.
 
-## 📖 Uso
+## Desarrollo
 
-### Iniciar la aplicación
+Requisitos: Node.js 22.12+ y pnpm 11+.
 
-Para iniciar la aplicación en modo normal:
 ```bash
-npm start
+pnpm install
+pnpm start            # ejecutar en desarrollo (pnpm start -- --dev abre DevTools)
+pnpm lint             # ESLint (0 errores)
+pnpm format           # Prettier
+pnpm package:win      # instalador de Windows en release/
+pnpm package:mac      # .dmg (solo desde macOS)
+pnpm package:linux    # AppImage (Linux o Docker)
 ```
 
-Para iniciar en modo desarrollo (con DevTools):
-```bash
-npm run dev
-```
-
-## 🎯 Guía de Uso
-
-### 🎨 Cambiar Tema
-
-1. Haz clic en el botón 🌓 en el footer de la barra lateral
-2. El tema cambia instantáneamente entre oscuro y claro
-3. Tu preferencia se guarda automáticamente
-
-### 📝 Crear un nuevo snippet
-
-1. Haz clic en el botón "+ Nuevo Snippet"
-2. Completa los campos:
-   - **Descripción**: Título o descripción breve
-   - **Lenguaje**: Selecciona el lenguaje o framework
-   - **Código**: Escribe o pega tu código
-   - **Rating**: Califica el snippet (opcional)
-3. Haz clic en "💾 Guardar"
-
-### 👁️ Ver un snippet
-
-1. Haz clic en cualquier snippet de la lista lateral
-2. Visualiza el código con syntax highlighting
-3. Usa el botón "📋 Copiar" para copiar el código
-4. Modifica el rating haciendo clic en las estrellas
-
-### ✏️ Editar un snippet
-
-1. Selecciona el snippet que deseas editar
-2. Haz clic en "✏️ Editar"
-3. Realiza los cambios necesarios
-4. Haz clic en "💾 Guardar"
-
-### 🗑️ Eliminar un snippet
-
-1. Selecciona el snippet que deseas eliminar
-2. Haz clic en "🗑️ Eliminar"
-3. Confirma la eliminación en el diálogo
-
-### 📤 Exportar Snippets
-
-**Exportar todos los snippets:**
-1. Haz clic en el botón 📤 en el footer
-2. Selecciona la ubicación y nombre del archivo
-3. Se guardará un archivo JSON con todos tus snippets
-
-**Exportar un snippet individual:**
-1. Selecciona el snippet que quieres exportar
-2. Haz clic en "💾 Exportar" en la vista del snippet
-3. El snippet se guarda como archivo de código con su extensión correcta
-4. Incluye metadata en comentarios del archivo
-
-### 📥 Importar Snippets
-
-1. Haz clic en el botón 📥 en el footer
-2. Selecciona un archivo JSON con snippets
-3. Confirma la importación
-4. Los snippets se agregan a tu colección (no elimina los existentes)
-
-### 🔍 Buscar y filtrar
-
-- **Búsqueda**: Escribe en el campo de búsqueda para filtrar por descripción o código
-- **Filtro de lenguaje**: Selecciona un lenguaje específico del menú desplegable
-
-### 🔄 Actualizar la lista
-
-- Haz clic en el botón "🔄" para sincronizar con la API
-
-## 🛠️ Tecnologías utilizadas
-
-- **Electron 27**: Framework para aplicaciones de escritorio
-- **Node.js**: Entorno de ejecución
-- **Axios**: Cliente HTTP para peticiones a la API
-- **Highlight.js**: Biblioteca de syntax highlighting
-- **HTML/CSS/JavaScript**: Frontend de la aplicación
-
-## 🎨 Lenguajes y Frameworks Soportados
-
-### JavaScript Ecosystem
-- JavaScript
-- TypeScript
-- React / JSX
-- Vue.js
-- Angular
-- Node.js
-
-### Lenguajes de Programación
-- Python
-- Java
-- C#
-- C++
-- PHP
-- Ruby
-- Go
-- Rust
-- Swift
-- Kotlin
-
-### Web Technologies
-- HTML
-- CSS
-- SCSS
-- Sass
-
-### Data & Markup
-- SQL
-- JSON
-- XML
-- YAML
-- Markdown
-
-### Shell & Tools
-- Bash
-- PowerShell
-- Git
-- Docker
-
-### Others
-- HTTP
-- GraphQL
-- Regex
-
-## 📡 API Endpoints
-
-La aplicación se conecta a los siguientes endpoints:
-
-- `GET /api/snippets` - Obtener todos los snippets
-- `POST /api/snippets` - Crear nuevo snippet
-- `PUT /api/snippets/:id` - Actualizar snippet
-- `DELETE /api/snippets/:id` - Eliminar snippet
-- `PATCH /api/snippets/:id/rating` - Actualizar rating
-
-## 🔧 Configuración
-
-### Cambiar la URL de la API
-
-Si necesitas cambiar el endpoint de la API, edita el archivo `src/main.js`:
-
-```javascript
-const API_URL = 'https://tu-nuevo-endpoint.com/api/snippets';
-```
-
-### Personalizar Temas de Highlight.js
-
-Para usar otros temas de highlight.js, edita `src/index.html`:
-
-```html
-<!-- Tema oscuro -->
-<link rel="stylesheet" href="../node_modules/highlight.js/styles/atom-one-dark.css" id="hljs-dark">
-
-<!-- Tema claro -->
-<link rel="stylesheet" href="../node_modules/highlight.js/styles/atom-one-light.css" id="hljs-light" disabled>
-```
-
-Explora más temas en: https://highlightjs.org/static/demo/
-
-## 📦 Estructura del proyecto
+### Estructura
 
 ```
-snippets-manager/
-├── package.json           # Configuración y dependencias
-├── README.md             # Este archivo
-├── node_modules/         # Dependencias instaladas
-└── src/                  # Código fuente
-    ├── main.js           # Proceso principal de Electron
-    ├── preload.js        # Script de precarga (seguridad)
-    ├── renderer.js       # Lógica de la interfaz
-    ├── index.html        # Estructura HTML
-    └── assets/           # Recursos
-        └── styles/
-            └── styles.css # Estilos de la aplicación
+src/
+├── main.js            # proceso principal: ventana, diálogos e IPC
+├── preload.js         # puente IPC seguro (contextIsolation)
+├── renderer.js        # interfaz: lista, vistas, filtros, atajos y Ajustes
+├── index.html         # estructura de la ventana (CSP estricta)
+├── settings.js        # ajustes en userData/settings.json
+├── storage/
+│   ├── local-store.js # snippets en userData/snippets.json
+│   ├── api-store.js   # cliente de la API REST (axios)
+│   └── validate.js    # validación compartida
+└── assets/            # iconos y estilos
+docs/                  # landing (GitHub Pages), no se incluye en el instalador
+.github/workflows/     # release.yml (instaladores) y pr-review.yml
 ```
 
-## 🎨 Atajos de teclado
+### API remota
 
-- `Ctrl/Cmd + R` - Recargar la aplicación
-- `Ctrl/Cmd + Shift + I` - Abrir DevTools (en modo desarrollo)
+Si usas el modo API, el servidor (URL base, p. ej. `https://mi-servidor.com/api/snippets`) debe responder a
+`GET /` → `{ "snippets": [...] }`, `POST /` y `PUT /:id` → `{ "snippet": {...} }`, `PATCH /:id/rating`,
+`DELETE /:id` y, opcionalmente, `POST /importar`. El backend de referencia ignora `rating` en POST/PUT, así que la app
+lo guarda con `PATCH`. **No tiene autenticación**: no lo expongas en Internet con datos que no quieras compartir.
 
-## 🐛 Solución de problemas
+Cambiar de almacenamiento no mueve los snippets: expórtalos (📤) antes e impórtalos (📥) después.
 
-### La aplicación no se inicia
-- Verifica que Node.js esté instalado: `node --version`
-- Reinstala las dependencias: `rm -rf node_modules && npm install`
+## Capturas de la web: cómo regenerarlas
 
-### Error de conexión con la API
-- Verifica que la URL de la API sea correcta
-- Comprueba tu conexión a internet
-- Verifica que el servicio de la API esté funcionando
+Las capturas de `docs/assets/screenshots/` son reales. Se generan con un script de Electron **fuera del repositorio**
+que se carga antes de `main.js` con `electron -r <script> .`:
 
-### Los snippets no se cargan
-- Haz clic en el botón "🔄 Actualizar"
-- Verifica la consola de errores (F12 en modo desarrollo)
+1. Al principio del script, `app.setPath('userData', <carpeta temporal>)` y un `snippets.json` con datos de ejemplo
+   (así no se tocan los datos reales ni hace falta red).
+2. Sustituir solo los handlers IPC que saldrían del equipo (p. ej. `test-api` con `ipcMain.removeHandler` +
+   `ipcMain.handle` devolviendo un resultado de ejemplo).
+3. Manejar la UI con `webContents.executeJavaScript` (clics, filtros, Ajustes, tema) y, antes de cada
+   `capturePage()`, llamar a `webContents.invalidate()` (si no, se captura el fotograma anterior).
+4. Ventana a 1400×880 (`setContentSize`) y guardar en PNG con los nombres `01-principal`, `02-edicion`,
+   `03-filtro-lenguaje`, `04-ajustes` y `05-tema-claro`.
 
-### El syntax highlighting no funciona
-- Verifica que highlight.js esté instalado: `npm list highlight.js`
-- Reinstala si es necesario: `npm install highlight.js`
-- Revisa la consola del navegador para errores
+## Publicar una versión
 
-### Los temas no cambian
-- Verifica que ambos archivos CSS de highlight.js existan
-- Limpia la caché: `Ctrl + Shift + Delete`
-- Revisa localStorage: abre DevTools y ejecuta `localStorage.clear()`
+1. Subir la versión en `package.json` (la app la muestra en Ajustes) y hacer commit en `develop`.
+2. Crear el tag anotado, que debe coincidir con `package.json`: `git tag -a v2.1.0 -m "v2.1.0"`.
+3. Subir la rama y el tag: `git push origin develop` y `git push origin v2.1.0`.
+4. En _Actions_, **Release v2.1.0** crea un borrador y compila Windows, macOS y Linux (~10 min).
+5. Revisar el borrador en _Releases_ (`Snippets-Manager-Pro-Setup-X.Y.Z.exe`, `…-X.Y.Z-arm64.dmg`,
+   `…-X.Y.Z.AppImage`) y pulsar **Publish release**: la web pasa sola a la nueva versión.
 
-## 🚀 Próximas mejoras
+Si un build falla: corregir, borrar el tag (`git tag -d vX.Y.Z && git push origin :refs/tags/vX.Y.Z`), crearlo de
+nuevo sobre el commit bueno y subirlo.
 
-- [ ] Modo offline con caché local
-- [ ] Etiquetas y categorías personalizadas
-- [ ] Búsqueda avanzada con regex
-- [ ] Atajos de teclado personalizables
-- [ ] Integración con GitHub Gists
-- [ ] Sincronización entre dispositivos
-- [ ] Snippets colaborativos
-- [ ] Plugins y extensiones
+## Licencia
 
-## 📄 Licencia
-
-MIT License - Libre para usar y modificar
-
-## 👨‍💻 Contribuir
-
-Las contribuciones son bienvenidas. Por favor:
-
-1. Fork el proyecto
-2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
-
-## 📞 Soporte
-
-Si encuentras algún problema o tienes sugerencias:
-- Abre un issue en el repositorio
-- Consulta la documentación
-- Revisa la sección de solución de problemas
-
----
-
-## 🎉 Changelog
-
-### v2.0.0 (2024)
-- ✨ Añadido syntax highlighting con Highlight.js
-- ✨ Implementado sistema de temas (oscuro/claro)
-- ✨ Añadida funcionalidad de exportar snippets (JSON y archivos individuales)
-- ✨ Añadida funcionalidad de importar snippets desde JSON
-- ✨ Soporte para frameworks modernos (React, Vue, Angular)
-- ✨ Ampliado soporte de lenguajes (30+ lenguajes)
-- 🎨 Interfaz mejorada con nuevos iconos y acciones
-- 📝 Documentación actualizada y ampliada
-
-### v1.0.0 (2024)
-- 🎉 Versión inicial
-- ✅ CRUD completo de snippets
-- ✅ Búsqueda y filtros
-- ✅ Sistema de rating
-- ✅ Interfaz moderna
-
----
-
-**¡Disfruta gestionando tus snippets de código! 🎉**
-
-Made with ❤️ using Electron
+MIT — Carlos Mur
