@@ -365,7 +365,8 @@ async function updateExistingSnippet(snippetData) {
   if (result.success) {
     const index = snippets.findIndex(s => s._id === editingSnippet._id);
     if (index !== -1) {
-      snippets[index] = { ...snippets[index], ...snippetData };
+      // Se usa lo que devuelve el servidor para no mostrar datos que no se han guardado
+      snippets[index] = { ...snippets[index], ...snippetData, ...result.data };
       selectedSnippet = snippets[index];
     }
     showToast('Snippet actualizado correctamente', 'success');

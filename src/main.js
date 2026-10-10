@@ -59,11 +59,22 @@ ipcMain.handle('get-snippets', async () => {
   }
 });
 
+// El backend ignora "rating" en POST y PUT: solo lo guarda PATCH /:id/rating
+async function saveRating(snippet, rating) {
+  if (rating === undefined || rating === (snippet.rating || 0)) {
+    return snippet;
+  }
+  const response = await axios.patch(`${API_URL}/${snippet._id}/rating`, { rating });
+  return response.data.snippet;
+}
+
 // POST - Crear nuevo snippet
 ipcMain.handle('create-snippet', async (event, snippetData) => {
   try {
-    const response = await axios.post(API_URL, snippetData);
-    return { success: true, data: response.data };
+    const { rating, ...fields } = snippetData;
+    const response = await axios.post(API_URL, fields);
+    const snippet = await saveRating(response.data.snippet, rating);
+    return { success: true, data: snippet };
   } catch (error) {
     console.error('Error creating snippet:', error);
     return { success: false, error: error.message };
@@ -73,8 +84,10 @@ ipcMain.handle('create-snippet', async (event, snippetData) => {
 // PUT - Actualizar snippet
 ipcMain.handle('update-snippet', async (event, id, snippetData) => {
   try {
-    const response = await axios.put(`${API_URL}/${id}`, snippetData);
-    return { success: true, data: response.data };
+    const { rating, ...fields } = snippetData;
+    const response = await axios.put(`${API_URL}/${id}`, fields);
+    const snippet = await saveRating(response.data.snippet, rating);
+    return { success: true, data: snippet };
   } catch (error) {
     console.error('Error updating snippet:', error);
     return { success: false, error: error.message };
