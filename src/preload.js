@@ -24,9 +24,23 @@ contextBridge.exposeInMainWorld('api', {
   // Exportar todos los snippets a JSON
   exportSnippets: snippets => ipcRenderer.invoke('export-snippets', snippets),
 
-  // Importar snippets desde JSON
+  // Leer snippets de un archivo JSON (devuelve los válidos y cuántos se descartan)
   importSnippets: () => ipcRenderer.invoke('import-snippets'),
+
+  // Guardar en el almacenamiento actual los snippets leídos con importSnippets
+  importBatch: items => ipcRenderer.invoke('import-batch', items),
 
   // Exportar un snippet individual a archivo
   exportSingleSnippet: snippet => ipcRenderer.invoke('export-single-snippet', snippet),
+
+  // ========== Ajustes ==========
+
+  // { storage: 'local' | 'api', apiUrl, localFile, version }
+  getSettings: () => ipcRenderer.invoke('get-settings'),
+  saveSettings: settings => ipcRenderer.invoke('save-settings', settings),
+  testApi: apiUrl => ipcRenderer.invoke('test-api', apiUrl),
+  showDataFile: () => ipcRenderer.invoke('show-data-file'),
+
+  // Avisar al proceso principal de cambios sin guardar (pregunta antes de cerrar la ventana)
+  setUnsavedChanges: value => ipcRenderer.send('set-unsaved-changes', value),
 });

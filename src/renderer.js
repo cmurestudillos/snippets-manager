@@ -65,8 +65,12 @@ const elements = {
 // ============================================
 async function init() {
   loadThemePreference();
+  await loadSettings();
   await loadSnippets();
   setupEventListeners();
+  setupSettingsListeners();
+  setupShortcuts();
+  setupUnsavedChangesListeners();
   populateLanguageFilter();
 }
 
@@ -106,6 +110,137 @@ function toggleTheme() {
   const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
   setTheme(newTheme);
   showToast(`Tema ${newTheme === 'dark' ? 'oscuro' : 'claro'} activado`, 'success');
+}
+
+// ============================================
+// AJUSTES: ALMACENAMIENTO LOCAL O API
+// ============================================
+const settingsElements = {
+  button: document.getElementById('settings-btn'),
+  modal: document.getElementById('settings-modal'),
+  storageBadge: document.getElementById('storage-badge'),
+  radios: document.querySelectorAll('input[name="storage"]'),
+  localDetail: document.getElementById('local-detail'),
+  localFilePath: document.getElementById('local-file-path'),
+  showDataFileBtn: document.getElementById('show-data-file-btn'),
+  apiDetail: document.getElementById('api-detail'),
+  apiUrlInput: document.getElementById('api-url-input'),
+  testApiBtn: document.getElementById('test-api-btn'),
+  apiTestResult: document.getElementById('api-test-result'),
+  appVersion: document.getElementById('app-version'),
+  cancelBtn: document.getElementById('settings-cancel-btn'),
+  saveBtn: document.getElementById('settings-save-btn'),
+};
+
+let currentSettings = { storage: 'local', apiUrl: '' };
+
+function renderStorageBadge() {
+  const isApi = currentSettings.storage === 'api';
+  settingsElements.storageBadge.textContent = isApi ? '☁️ API' : '💻 Local';
+  settingsElements.storageBadge.title = isApi
+    ? `Guardados en la API: ${currentSettings.apiUrl}`
+    : 'Guardados en este equipo';
+}
+
+async function loadSettings() {
+  currentSettings = await window.api.getSettings();
+  renderStorageBadge();
+}
+
+function selectedStorage() {
+  return [...settingsElements.radios].find(radio => radio.checked)?.value || 'local';
+}
+
+function updateStorageDetails() {
+  const storage = selectedStorage();
+  settingsElements.localDetail.hidden = storage !== 'local';
+  settingsElements.apiDetail.hidden = storage !== 'api';
+}
+
+async function openSettings() {
+  await loadSettings();
+  settingsElements.radios.forEach(radio => {
+    radio.checked = radio.value === currentSettings.storage;
+  });
+  settingsElements.apiUrlInput.value = currentSettings.apiUrl;
+  settingsElements.localFilePath.textContent = currentSettings.localFile;
+  settingsElements.appVersion.textContent = `Snippets Manager Pro v${currentSettings.version}`;
+  settingsElements.apiTestResult.textContent = '';
+  settingsElements.apiTestResult.className = 'api-test-result';
+  updateStorageDetails();
+  settingsElements.modal.hidden = false;
+  settingsElements.saveBtn.focus();
+}
+
+function closeSettings() {
+  settingsElements.modal.hidden = true;
+  settingsElements.button.focus();
+}
+
+async function testApiConnection() {
+  const result = settingsElements.apiTestResult;
+  result.className = 'api-test-result';
+  result.textContent = 'Conectando...';
+  const response = await window.api.testApi(settingsElements.apiUrlInput.value.trim());
+  if (response.success) {
+    result.classList.add('ok');
+    result.textContent = `✓ Conectado: ${response.data} snippets`;
+  } else {
+    result.classList.add('error');
+    result.textContent = `✗ ${response.error}`;
+  }
+}
+
+async function saveSettings() {
+  const next = { storage: selectedStorage(), apiUrl: settingsElements.apiUrlInput.value.trim() };
+  const changed = next.storage !== currentSettings.storage || next.apiUrl !== currentSettings.apiUrl;
+  if (changed && !confirmDiscardChanges()) {
+    return;
+  }
+
+  const result = await window.api.saveSettings(next);
+  if (!result.success) {
+    showToast(result.error, 'error');
+    return;
+  }
+  closeSettings();
+  if (!changed) {
+    return;
+  }
+
+  // Otro almacenamiento: otra lista de snippets
+  await loadSettings();
+  selectedSnippet = null;
+  editingSnippet = null;
+  elements.snippetView.style.display = 'none';
+  elements.editView.style.display = 'none';
+  elements.emptyState.style.display = 'flex';
+  clearFormSnapshot();
+  await loadSnippets();
+}
+
+function setupSettingsListeners() {
+  settingsElements.button.addEventListener('click', openSettings);
+  settingsElements.cancelBtn.addEventListener('click', closeSettings);
+  settingsElements.saveBtn.addEventListener('click', saveSettings);
+  settingsElements.testApiBtn.addEventListener('click', testApiConnection);
+  settingsElements.showDataFileBtn.addEventListener('click', () => window.api.showDataFile());
+  settingsElements.radios.forEach(radio => radio.addEventListener('change', updateStorageDetails));
+  settingsElements.apiUrlInput.addEventListener('input', () => {
+    settingsElements.apiTestResult.textContent = '';
+  });
+  // Clic fuera del diálogo o Escape: cerrar sin guardar
+  settingsElements.modal.addEventListener('click', event => {
+    if (event.target === settingsElements.modal) {
+      closeSettings();
+    }
+  });
+  settingsElements.modal.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+      event.stopPropagation();
+      closeSettings();
+    }
+  });
 }
 
 // ============================================
@@ -151,10 +286,12 @@ function highlightCode(code, language) {
     docker: 'dockerfile',
     http: 'http',
     graphql: 'graphql',
-    regex: 'regex',
+    regex: 'plaintext', // highlight.js no tiene gramática de expresiones regulares
   };
 
-  const hljsLanguage = languageMap[language.toLowerCase()] || 'plaintext';
+  const mapped = languageMap[String(language).toLowerCase()];
+  // Lenguajes sin gramática cargada (p. ej. "other"): texto plano en vez de un error en consola
+  const hljsLanguage = typeof hljs !== 'undefined' && mapped && hljs.getLanguage(mapped) ? mapped : 'plaintext';
 
   try {
     if (typeof hljs !== 'undefined') {
@@ -177,10 +314,8 @@ async function loadSnippets() {
 
   if (result.success) {
     snippets = result.data;
-    filteredSnippets = [...snippets];
-    renderSnippetsList();
-    updateSnippetCount();
     populateLanguageFilter();
+    applyFilters();
     showToast('Snippets cargados correctamente', 'success');
   } else {
     showToast('Error al cargar snippets: ' + result.error, 'error');
@@ -200,10 +335,10 @@ function renderSnippetsList() {
   elements.snippetsList.innerHTML = filteredSnippets
     .map(
       snippet => `
-    <div class="snippet-item ${selectedSnippet?._id === snippet._id ? 'active' : ''}" data-id="${snippet._id}">
+    <div class="snippet-item ${selectedSnippet?._id === snippet._id ? 'active' : ''}" data-id="${escapeHtml(snippet._id)}">
       <div class="snippet-item-header">
         <span class="snippet-item-title">${escapeHtml(snippet.description)}</span>
-        <span class="language-badge">${snippet.language}</span>
+        <span class="language-badge">${escapeHtml(snippet.language)}</span>
       </div>
       <div class="snippet-item-preview">${escapeHtml(snippet.code.substring(0, 60))}...</div>
       <div class="snippet-item-footer">
@@ -224,6 +359,8 @@ function renderSnippetsList() {
 }
 
 function selectSnippet(id) {
+  if (!confirmDiscardChanges()) return;
+  clearFormSnapshot();
   selectedSnippet = snippets.find(s => s._id === id);
   if (!selectedSnippet) return;
 
@@ -285,6 +422,7 @@ async function updateRating(rating) {
 }
 
 function showNewSnippetView() {
+  if (!confirmDiscardChanges()) return;
   editingSnippet = null;
   elements.editTitle.textContent = 'Nuevo Snippet';
   elements.formDescription.value = '';
@@ -297,6 +435,8 @@ function showNewSnippetView() {
   elements.emptyState.style.display = 'none';
   elements.snippetView.style.display = 'none';
   elements.editView.style.display = 'block';
+  elements.formDescription.focus();
+  takeFormSnapshot();
 }
 
 function showEditSnippetView() {
@@ -314,6 +454,8 @@ function showEditSnippetView() {
   elements.emptyState.style.display = 'none';
   elements.snippetView.style.display = 'none';
   elements.editView.style.display = 'block';
+  elements.formDescription.focus();
+  takeFormSnapshot();
 }
 
 function updateStarsInput() {
@@ -347,6 +489,8 @@ async function saveSnippet(event) {
   const result = editingSnippet ? await updateExistingSnippet(snippetData) : await createNewSnippet(snippetData);
 
   if (result.success) {
+    clearFormSnapshot();
+    populateLanguageFilter();
     applyFilters();
     if (selectedSnippet) {
       showSnippetView();
@@ -365,7 +509,8 @@ async function updateExistingSnippet(snippetData) {
   if (result.success) {
     const index = snippets.findIndex(s => s._id === editingSnippet._id);
     if (index !== -1) {
-      snippets[index] = { ...snippets[index], ...snippetData };
+      // Se usa lo que devuelve el servidor para no mostrar datos que no se han guardado
+      snippets[index] = { ...snippets[index], ...snippetData, ...result.data };
       selectedSnippet = snippets[index];
     }
     showToast('Snippet actualizado correctamente', 'success');
@@ -383,6 +528,8 @@ async function createNewSnippet(snippetData) {
 }
 
 function cancelEdit() {
+  if (!confirmDiscardChanges()) return;
+  clearFormSnapshot();
   if (selectedSnippet) {
     showSnippetView();
     renderSelectedSnippet();
@@ -403,6 +550,7 @@ async function deleteSnippet() {
   if (result.success) {
     snippets = snippets.filter(s => s._id !== selectedSnippet._id);
     selectedSnippet = null;
+    populateLanguageFilter();
     applyFilters();
     elements.snippetView.style.display = 'none';
     elements.emptyState.style.display = 'flex';
@@ -448,6 +596,9 @@ async function importSnippets() {
 
   if (result.success) {
     const importedSnippets = result.data;
+    const skippedNote = result.skipped
+      ? `\n\nSe descartarán ${result.skipped} elementos sin descripción, lenguaje o código.`
+      : '';
 
     if (!Array.isArray(importedSnippets) || importedSnippets.length === 0) {
       showToast('El archivo no contiene snippets válidos', 'warning');
@@ -456,33 +607,20 @@ async function importSnippets() {
 
     const confirmed = confirm(
       `¿Deseas importar ${importedSnippets.length} snippets?\n\n` +
-        `Esto NO eliminará tus snippets actuales, solo agregará los nuevos.`
+        `Esto NO eliminará tus snippets actuales, solo agregará los nuevos.` +
+        skippedNote
     );
 
     if (!confirmed) return;
 
-    // Crear cada snippet en la API
-    let successCount = 0;
-    let errorCount = 0;
-
-    for (const snippet of importedSnippets) {
-      // Remover el _id y __v de MongoDB si existe
-      const { _id, __v, ...snippetData } = snippet;
-
-      const createResult = await window.api.createSnippet(snippetData);
-      if (createResult.success) {
-        successCount++;
-      } else {
-        errorCount++;
-      }
-    }
-
+    // Todos de una vez (en modo API, una sola petición a POST /importar)
+    const batchResult = await window.api.importBatch(importedSnippets);
     await loadSnippets();
 
-    if (errorCount === 0) {
-      showToast(`${successCount} snippets importados correctamente`, 'success');
+    if (batchResult.success) {
+      showToast(`${batchResult.data} snippets importados correctamente`, 'success');
     } else {
-      showToast(`Importación completada: ${successCount} exitosos, ${errorCount} errores`, 'warning');
+      showToast('Error al importar snippets: ' + batchResult.error, 'error');
     }
   } else if (!result.cancelled) {
     showToast('Error al importar snippets: ' + result.error, 'error');
@@ -529,7 +667,7 @@ function populateLanguageFilter() {
 
   elements.languageFilter.innerHTML =
     '<option value="">Todos los lenguajes</option>' +
-    languages.map(lang => `<option value="${lang}">${lang}</option>`).join('');
+    languages.map(lang => `<option value="${escapeHtml(lang)}">${escapeHtml(lang)}</option>`).join('');
 
   elements.languageFilter.value = currentValue;
 }
@@ -550,10 +688,11 @@ function showToast(message, type = 'info') {
   }, 3000);
 }
 
+const HTML_ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+
+// También escapa comillas: se usa dentro de atributos (value, data-id)
 function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
+  return String(text ?? '').replace(/[&<>"']/g, char => HTML_ESCAPES[char]);
 }
 
 function formatDate(dateString) {
@@ -594,6 +733,7 @@ function setupEventListeners() {
     star.addEventListener('click', () => {
       currentRating = index + 1;
       elements.formRating.value = currentRating;
+      notifyUnsavedChanges();
       updateStarsInput();
     });
 
@@ -609,6 +749,118 @@ function setupEventListeners() {
   });
 
   elements.starsInput.addEventListener('mouseleave', updateStarsInput);
+}
+
+// ============================================
+// CAMBIOS SIN GUARDAR EN EL FORMULARIO
+// ============================================
+// Valores del formulario al abrirlo; si cambian se pide confirmación antes de descartarlos
+let formSnapshot = null;
+let notifiedUnsaved = false;
+
+const readForm = () =>
+  JSON.stringify([
+    elements.formDescription.value,
+    elements.formLanguage.value,
+    elements.formCode.value,
+    elements.formRating.value,
+  ]);
+
+function hasUnsavedChanges() {
+  return formSnapshot !== null && elements.editView.style.display === 'block' && readForm() !== formSnapshot;
+}
+
+// El proceso principal pregunta antes de cerrar la ventana si hay cambios
+function notifyUnsavedChanges() {
+  const unsaved = hasUnsavedChanges();
+  if (unsaved !== notifiedUnsaved) {
+    notifiedUnsaved = unsaved;
+    window.api.setUnsavedChanges(unsaved);
+  }
+}
+
+function takeFormSnapshot() {
+  formSnapshot = readForm();
+  notifyUnsavedChanges();
+}
+
+function clearFormSnapshot() {
+  formSnapshot = null;
+  notifyUnsavedChanges();
+}
+
+function confirmDiscardChanges() {
+  return !hasUnsavedChanges() || confirm('El snippet tiene cambios sin guardar. ¿Quieres descartarlos?');
+}
+
+function setupUnsavedChangesListeners() {
+  // Tras recargar la ventana (Ctrl+R) no queda ningún formulario abierto
+  window.api.setUnsavedChanges(false);
+  elements.formDescription.addEventListener('input', notifyUnsavedChanges);
+  elements.formCode.addEventListener('input', notifyUnsavedChanges);
+  elements.formLanguage.addEventListener('change', notifyUnsavedChanges);
+}
+
+// ============================================
+// ATAJOS DE TECLADO
+// ============================================
+const isMac = navigator.userAgent.includes('Mac');
+const MOD_LABEL = isMac ? '⌘' : 'Ctrl+';
+
+const isShown = element => element.style.display === 'block';
+
+function isSettingsOpen() {
+  return !settingsElements.modal.hidden;
+}
+
+function focusSearch() {
+  elements.searchInput.focus();
+  elements.searchInput.select();
+}
+
+// Ctrl/⌘+N nuevo · Ctrl/⌘+F buscar · Ctrl/⌘+S guardar · Ctrl/⌘+E editar · Esc cancelar / limpiar búsqueda
+const SHORTCUTS = {
+  n: () => showNewSnippetView(),
+  f: () => focusSearch(),
+  s: event => isShown(elements.editView) && saveSnippet(event),
+  e: () => isShown(elements.snippetView) && showEditSnippetView(),
+};
+
+function handleEscape(event) {
+  if (document.activeElement === elements.searchInput && elements.searchInput.value) {
+    elements.searchInput.value = '';
+    applyFilters();
+  } else if (isShown(elements.editView)) {
+    event.preventDefault();
+    cancelEdit();
+  }
+}
+
+function handleShortcut(event) {
+  // El modal de Ajustes gestiona su propio Escape
+  if (isSettingsOpen()) {
+    return;
+  }
+  if (event.key === 'Escape') {
+    handleEscape(event);
+    return;
+  }
+  const modifier = isMac ? event.metaKey : event.ctrlKey;
+  const action = SHORTCUTS[event.key.toLowerCase()];
+  if (!modifier || event.altKey || event.shiftKey || !action) {
+    return;
+  }
+  event.preventDefault();
+  action(event);
+}
+
+function setupShortcuts() {
+  elements.newSnippetBtn.title = `Nuevo snippet (${MOD_LABEL}N)`;
+  elements.searchInput.title = `Buscar (${MOD_LABEL}F)`;
+  elements.saveBtn.title = `Guardar (${MOD_LABEL}S)`;
+  elements.editBtn.title = `Editar (${MOD_LABEL}E)`;
+  elements.cancelBtn.title = 'Cancelar (Esc)';
+  document.addEventListener('keydown', handleShortcut);
 }
 
 // ============================================

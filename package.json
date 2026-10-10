@@ -1,7 +1,7 @@
 {
   "name": "snippets-manager",
-  "version": "2.0.0",
-  "description": "Gestor de snippets de código con Electron",
+  "version": "2.1.0",
+  "description": "Gestor de snippets de código para escritorio (Electron): local o con API propia",
   "main": "src/main.js",
   "packageManager": "pnpm@11.1.2",
   "scripts": {
@@ -22,6 +22,7 @@
   "author": "Carlos Mur",
   "license": "MIT",
   "dependencies": {
+    "@highlightjs/cdn-assets": "^11.11.1",
     "axios": "^1.18.1",
     "ms": "^2.1.3"
   },
@@ -36,20 +37,51 @@
   },
   "build": {
     "appId": "com.cmurestudillos.snippetsmanager",
-    "productName": "Snippets Manager",
+    "productName": "Snippets Manager Pro",
     "directories": {
       "output": "release/"
     },
+    "files": [
+      "**/*",
+      "!docs{,/**/*}",
+      "!.github{,/**/*}",
+      "!.vscode{,/**/*}",
+      "!release{,/**/*}",
+      "!README.md",
+      "!eslint.config.js",
+      "!pnpm-workspace.yaml",
+      "!pnpm-lock.yaml",
+      "!.npmrc",
+      "!.prettierrc",
+      "!.prettierignore",
+      "!.gitattributes"
+    ],
+    "publish": {
+      "provider": "github",
+      "owner": "cmurestudillos",
+      "repo": "snippets-manager",
+      "releaseType": "draft"
+    },
     "mac": {
       "category": "public.app-category.developer-tools",
-      "icon": "src/assets/icons/icon.icns"
+      "icon": "src/assets/icons/icon.icns",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64"
+          ]
+        }
+      ]
     },
     "win": {
-      "icon": "src/assets/icons/icon.ico"
+      "icon": "src/assets/icons/icon.ico",
+      "target": "nsis"
     },
     "linux": {
       "icon": "src/assets/icons/icon.png",
-      "category": "Development"
+      "category": "Development",
+      "target": "AppImage"
     }
   }
 }

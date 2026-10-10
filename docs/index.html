@@ -1,0 +1,629 @@
+<!doctype html>
+<html lang="es" data-theme="auto">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Snippets Manager Pro — Tus snippets de código, organizados y a mano</title>
+    <meta
+      name="description"
+      content="Aplicación de escritorio para guardar, buscar y reutilizar tus snippets de código: resaltado de sintaxis para 30+ lenguajes, rating, importar/exportar y almacenamiento local o en tu propia API. Windows, macOS y Linux." />
+    <meta name="color-scheme" content="light dark" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src https://api.github.com" />
+    <link rel="icon" href="assets/icons/icon.png" />
+    <link rel="stylesheet" href="assets/css/styles.css" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Snippets Manager Pro — Tus snippets de código, organizados y a mano" />
+    <meta
+      property="og:description"
+      content="Guarda tus fragmentos de código con resaltado de sintaxis, búsqueda, filtro por lenguaje y rating. En tu equipo, sin conexión, o en tu propia API. Gratis y de código abierto." />
+    <meta
+      property="og:image"
+      content="https://cmurestudillos.github.io/snippets-manager/assets/screenshots/01-principal.png" />
+    <meta property="og:url" content="https://cmurestudillos.github.io/snippets-manager/" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Saltar al contenido</a>
+
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="brand" href="#/">
+          <img src="assets/icons/icon.png" alt="" width="32" height="32" />
+          <span>Snippets Manager Pro</span>
+        </a>
+
+        <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="siteNav" aria-label="Abrir menú">
+          <span></span><span></span><span></span>
+        </button>
+
+        <nav class="site-nav" id="siteNav" aria-label="Navegación principal">
+          <a href="#/" data-route-link="/">Inicio</a>
+          <a href="#/caracteristicas" data-route-link="/caracteristicas">Características</a>
+          <a href="#/capturas" data-route-link="/capturas">Capturas</a>
+          <a href="#/descargas" data-route-link="/descargas">Descargas</a>
+          <a href="#/documentacion" data-route-link="/documentacion">Documentación</a>
+          <a class="nav-cta" href="https://github.com/cmurestudillos/snippets-manager" rel="noopener">GitHub</a>
+          <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <span aria-hidden="true">🌗</span>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <!-- ══════════════════ INICIO ══════════════════ -->
+      <section class="view" data-route="/">
+        <div class="hero">
+          <div class="container hero-inner">
+            <div class="hero-copy">
+              <p class="eyebrow">
+                <span class="dot"></span> Código abierto · MIT ·
+                <span id="heroVersion">v2.1.0</span>
+              </p>
+              <h1>Tus snippets de código, siempre a mano</h1>
+              <p class="lead">
+                Guarda ese fragmento que siempre acabas buscando: con resaltado de sintaxis, búsqueda instantánea,
+                filtro por lenguaje y rating. En tu equipo y sin conexión, o en tu propia API para compartirlos entre
+                equipos.
+              </p>
+              <div class="hero-actions">
+                <a class="btn btn-primary btn-lg" id="heroDownload" href="#/descargas"> ⬇ Descargar gratis </a>
+                <a class="btn btn-ghost btn-lg" href="#/capturas">Ver capturas</a>
+              </div>
+              <p class="hero-meta" id="heroMeta">Windows · macOS · Linux — sin registro y sin cuentas</p>
+            </div>
+
+            <figure class="hero-shot">
+              <img
+                src="assets/screenshots/01-principal.png"
+                alt="Ventana de Snippets Manager Pro con la lista de snippets a la izquierda y un snippet de JavaScript resaltado a la derecha"
+                width="1400"
+                height="880"
+                loading="eager" />
+            </figure>
+          </div>
+        </div>
+
+        <div class="container">
+          <ul class="stat-row">
+            <li><strong>32</strong><span>lenguajes y frameworks</span></li>
+            <li><strong>2</strong><span>almacenamientos: local o API</span></li>
+            <li><strong>0</strong><span>conexión necesaria en modo local</span></li>
+            <li><strong>MIT</strong><span>licencia libre</span></li>
+          </ul>
+
+          <h2 class="section-title">Cómo funciona</h2>
+          <ol class="steps">
+            <li>
+              <span class="step-num">1</span>
+              <h3>Guarda el snippet</h3>
+              <p>
+                <kbd>Ctrl</kbd>+<kbd>N</kbd>, una descripción, el lenguaje y el código. Si quieres, puntúalo de 1 a 5
+                estrellas.
+              </p>
+            </li>
+            <li>
+              <span class="step-num">2</span>
+              <h3>Encuéntralo al momento</h3>
+              <p>
+                <kbd>Ctrl</kbd>+<kbd>F</kbd> busca en la descripción y en el código; el desplegable filtra por lenguaje.
+              </p>
+            </li>
+            <li>
+              <span class="step-num">3</span>
+              <h3>Reutilízalo</h3>
+              <p>Cópialo al portapapeles con un clic o expórtalo como archivo con la extensión de su lenguaje.</p>
+            </li>
+          </ol>
+
+          <div class="cta-band">
+            <div>
+              <h2>Deja de buscar el mismo código en proyectos antiguos</h2>
+              <p>Instaladores para Windows, macOS y Linux. Gratis, sin anuncios y con el código en GitHub.</p>
+            </div>
+            <a class="btn btn-light btn-lg" href="#/descargas">Ir a descargas</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════ CARACTERÍSTICAS ══════════════════ -->
+      <section class="view" data-route="/caracteristicas">
+        <div class="container">
+          <h1 class="page-title">Características</h1>
+          <p class="page-lead">
+            Una biblioteca personal de fragmentos de código, pensada para encontrar y reutilizar lo que ya escribiste
+            una vez.
+          </p>
+
+          <div class="card-grid">
+            <article class="card">
+              <span class="card-icon">💻</span>
+              <h3>En tu equipo, sin conexión</h3>
+              <p>
+                Por defecto los snippets se guardan en un archivo JSON local. No necesitas cuenta ni red, y nadie más
+                tiene acceso a ellos.
+              </p>
+            </article>
+            <article class="card">
+              <span class="card-icon">☁️</span>
+              <h3>O en tu propia API</h3>
+              <p>
+                En <em>Ajustes</em> puedes conectar la app a un servidor compatible con
+                <code>snippets-manager-backend</code>
+                para usar los mismos snippets en varios equipos. Botón para probar la conexión antes de guardar.
+              </p>
+            </article>
+            <article class="card">
+              <span class="card-icon">🎨</span>
+              <h3>Resaltado de sintaxis</h3>
+              <p>
+                Con highlight.js incluido en la app (funciona sin conexión) y su tema para el modo oscuro y el claro.
+              </p>
+            </article>
+            <article class="card">
+              <span class="card-icon">🔍</span>
+              <h3>Búsqueda y filtro</h3>
+              <p>
+                Búsqueda instantánea por descripción y por código, combinable con el filtro por lenguaje, que se rellena
+                solo con los lenguajes que usas.
+              </p>
+            </article>
+            <article class="card">
+              <span class="card-icon">⭐</span>
+              <h3>Rating</h3>
+              <p>Puntúa cada snippet de 1 a 5 estrellas al crearlo o con un clic en sus estrellas.</p>
+            </article>
+            <article class="card">
+              <span class="card-icon">📦</span>
+              <h3>Importar y exportar</h3>
+              <p>
+                Exporta toda la colección a JSON e impórtala en otro equipo o almacenamiento, o guarda un snippet suelto
+                como archivo de código con su extensión y una cabecera con sus datos.
+              </p>
+            </article>
+            <article class="card">
+              <span class="card-icon">⌨️</span>
+              <h3>Atajos de teclado</h3>
+              <p>Crear, buscar, guardar, editar y cancelar sin tocar el ratón.</p>
+            </article>
+            <article class="card">
+              <span class="card-icon">🛟</span>
+              <h3>Sin perder cambios</h3>
+              <p>
+                Si cancelas, cambias de snippet o cierras la ventana con un formulario a medias, la app te pregunta
+                antes de descartarlo.
+              </p>
+            </article>
+            <article class="card">
+              <span class="card-icon">🌓</span>
+              <h3>Tema oscuro y claro</h3>
+              <p>Con un clic; la app recuerda tu elección.</p>
+            </article>
+          </div>
+
+          <h2 class="section-title">Atajos de teclado</h2>
+          <p class="muted">En macOS, <kbd>⌘</kbd> en lugar de <kbd>Ctrl</kbd>.</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Acción</th>
+                  <th>Atajo</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Nuevo snippet</td>
+                  <td><kbd>Ctrl</kbd>+<kbd>N</kbd></td>
+                </tr>
+                <tr>
+                  <td>Buscar</td>
+                  <td><kbd>Ctrl</kbd>+<kbd>F</kbd></td>
+                </tr>
+                <tr>
+                  <td>Guardar (en el formulario)</td>
+                  <td><kbd>Ctrl</kbd>+<kbd>S</kbd></td>
+                </tr>
+                <tr>
+                  <td>Editar el snippet abierto</td>
+                  <td><kbd>Ctrl</kbd>+<kbd>E</kbd></td>
+                </tr>
+                <tr>
+                  <td>Cancelar la edición · limpiar la búsqueda · cerrar Ajustes</td>
+                  <td><kbd>Esc</kbd></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 class="section-title">Lenguajes y frameworks</h2>
+          <p class="muted">Todos con resaltado de sintaxis salvo Regex y «Otro», que se muestran como texto plano.</p>
+          <ul class="chip-list">
+            <li>JavaScript</li>
+            <li>TypeScript</li>
+            <li>React / JSX</li>
+            <li>Vue.js</li>
+            <li>Angular</li>
+            <li>Node.js</li>
+            <li>Python</li>
+            <li>Java</li>
+            <li>C#</li>
+            <li>C++</li>
+            <li>PHP</li>
+            <li>Ruby</li>
+            <li>Go</li>
+            <li>Rust</li>
+            <li>Swift</li>
+            <li>Kotlin</li>
+            <li>HTML</li>
+            <li>CSS</li>
+            <li>SCSS</li>
+            <li>Sass</li>
+            <li>SQL</li>
+            <li>JSON</li>
+            <li>XML</li>
+            <li>YAML</li>
+            <li>Markdown</li>
+            <li>Bash</li>
+            <li>PowerShell</li>
+            <li>Git</li>
+            <li>Docker</li>
+            <li>HTTP</li>
+            <li>GraphQL</li>
+            <li>Regex</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ══════════════════ CAPTURAS ══════════════════ -->
+      <section class="view" data-route="/capturas">
+        <div class="container">
+          <h1 class="page-title">Capturas</h1>
+          <p class="page-lead">
+            Capturas reales de la aplicación con una colección de ejemplo guardada en local. Haz clic para ampliar.
+          </p>
+
+          <div class="gallery" id="gallery">
+            <figure class="shot">
+              <button
+                class="shot-btn"
+                data-full="assets/screenshots/01-principal.png"
+                data-caption="Vista principal: la lista de snippets con su lenguaje, fecha y rating, y el snippet abierto con resaltado de sintaxis.">
+                <img
+                  src="assets/screenshots/01-principal.png"
+                  alt="Lista de snippets y un snippet de JavaScript abierto con resaltado de sintaxis"
+                  loading="lazy" />
+              </button>
+              <figcaption>
+                <strong>Vista principal</strong> — lista lateral y el snippet abierto, listo para copiar o exportar.
+              </figcaption>
+            </figure>
+
+            <figure class="shot">
+              <button
+                class="shot-btn"
+                data-full="assets/screenshots/02-edicion.png"
+                data-caption="Formulario de edición: descripción, lenguaje o framework, código y rating.">
+                <img
+                  src="assets/screenshots/02-edicion.png"
+                  alt="Formulario para editar un snippet de TypeScript"
+                  loading="lazy" />
+              </button>
+              <figcaption><strong>Crear y editar</strong> — descripción, lenguaje, código y estrellas.</figcaption>
+            </figure>
+
+            <figure class="shot">
+              <button
+                class="shot-btn"
+                data-full="assets/screenshots/03-filtro-lenguaje.png"
+                data-caption="Filtro por lenguaje: solo los snippets de JavaScript de la colección.">
+                <img
+                  src="assets/screenshots/03-filtro-lenguaje.png"
+                  alt="Lista filtrada por el lenguaje JavaScript"
+                  loading="lazy" />
+              </button>
+              <figcaption><strong>Filtrar por lenguaje</strong> — combinable con la búsqueda por texto.</figcaption>
+            </figure>
+
+            <figure class="shot">
+              <button
+                class="shot-btn"
+                data-full="assets/screenshots/04-ajustes.png"
+                data-caption="Ajustes: guardar los snippets en este equipo o en una API remota, con prueba de conexión.">
+                <img
+                  src="assets/screenshots/04-ajustes.png"
+                  alt="Diálogo de Ajustes con las opciones de almacenamiento local y API remota"
+                  loading="lazy" />
+              </button>
+              <figcaption><strong>Ajustes</strong> — almacenamiento local o tu propia API.</figcaption>
+            </figure>
+
+            <figure class="shot">
+              <button
+                class="shot-btn"
+                data-full="assets/screenshots/05-tema-claro.png"
+                data-caption="Tema claro, con un snippet de Python.">
+                <img
+                  src="assets/screenshots/05-tema-claro.png"
+                  alt="La aplicación con el tema claro mostrando un snippet de Python"
+                  loading="lazy" />
+              </button>
+              <figcaption><strong>Tema claro</strong> — también el resaltado de sintaxis cambia de tema.</figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════ DESCARGAS ══════════════════ -->
+      <section class="view" data-route="/descargas">
+        <div class="container">
+          <h1 class="page-title">Descargas</h1>
+          <p class="page-lead">
+            Última versión: <strong id="releaseTag">v2.1.0</strong>
+            <span id="releaseDate" class="muted"></span>
+          </p>
+
+          <div class="download-grid" id="downloadGrid">
+            <article class="download-card" data-os="windows">
+              <span class="os-icon" aria-hidden="true">🪟</span>
+              <h3>Windows</h3>
+              <p class="os-detail">Instalador <code>.exe</code> · 64 bits</p>
+              <a
+                class="btn btn-primary"
+                data-dl="windows"
+                href="https://github.com/cmurestudillos/snippets-manager/releases/latest"
+                >Descargar</a
+              >
+              <p class="dl-size" data-size="windows">~96 MB</p>
+            </article>
+
+            <article class="download-card" data-os="mac">
+              <span class="os-icon" aria-hidden="true">🍎</span>
+              <h3>macOS</h3>
+              <p class="os-detail">Imagen <code>.dmg</code> · Apple Silicon</p>
+              <a
+                class="btn btn-primary"
+                data-dl="mac"
+                href="https://github.com/cmurestudillos/snippets-manager/releases/latest"
+                >Descargar</a
+              >
+              <p class="dl-size" data-size="mac">Última versión en GitHub</p>
+            </article>
+
+            <article class="download-card" data-os="linux">
+              <span class="os-icon" aria-hidden="true">🐧</span>
+              <h3>Linux</h3>
+              <p class="os-detail">Ejecutable <code>.AppImage</code></p>
+              <a
+                class="btn btn-primary"
+                data-dl="linux"
+                href="https://github.com/cmurestudillos/snippets-manager/releases/latest"
+                >Descargar</a
+              >
+              <p class="dl-size" data-size="linux">Última versión en GitHub</p>
+            </article>
+          </div>
+
+          <p class="muted small">
+            ¿Prefieres ver todos los archivos?
+            <a href="https://github.com/cmurestudillos/snippets-manager/releases" rel="noopener"
+              >Todas las versiones en GitHub</a
+            >.
+          </p>
+
+          <h2 class="section-title">Notas de instalación</h2>
+          <div class="note-grid">
+            <div class="note">
+              <h3>🪟 Windows</h3>
+              <p>
+                SmartScreen puede avisar de que el editor es desconocido porque el instalador no está firmado. Pulsa
+                <em>Más información → Ejecutar de todas formas</em>.
+              </p>
+            </div>
+            <div class="note">
+              <h3>🍎 macOS</h3>
+              <p>
+                Si Gatekeeper bloquea la app, ábrela con clic derecho → <em>Abrir</em>, o ejecuta
+                <code>xattr -cr "/Applications/Snippets Manager Pro.app"</code>.
+              </p>
+            </div>
+            <div class="note">
+              <h3>🐧 Linux</h3>
+              <p>
+                Dale permisos de ejecución al AppImage:
+                <code>chmod +x Snippets-Manager-Pro-*.AppImage</code> y lánzalo con doble clic.
+              </p>
+            </div>
+          </div>
+
+          <h2 class="section-title">Compilar desde el código</h2>
+          <pre class="code-block"><code>git clone https://github.com/cmurestudillos/snippets-manager.git
+cd snippets-manager
+pnpm install
+
+pnpm start           # ejecutar en desarrollo
+pnpm package:win     # generar instalador de Windows
+pnpm package:mac     # generar imagen de macOS
+pnpm package:linux   # generar AppImage</code></pre>
+          <p class="muted small">
+            Requisitos: Node.js 22.12+ y pnpm 11+. Los instaladores se generan en <code>release/</code>.
+          </p>
+        </div>
+      </section>
+
+      <!-- ══════════════════ DOCUMENTACIÓN ══════════════════ -->
+      <section class="view" data-route="/documentacion">
+        <div class="container docs-layout">
+          <article class="docs-body">
+            <h1 class="page-title">Documentación</h1>
+
+            <h2 id="uso">Guía de uso</h2>
+            <h3>Crear un snippet</h3>
+            <p>
+              Pulsa <strong>+ Nuevo Snippet</strong> (<kbd>Ctrl</kbd>+<kbd>N</kbd>), escribe una descripción, elige el
+              lenguaje o framework, pega el código y, si quieres, márcale estrellas. <strong>Guardar</strong>
+              (<kbd>Ctrl</kbd>+<kbd>S</kbd>) lo añade a la lista.
+            </p>
+
+            <h3>Ver, copiar y puntuar</h3>
+            <p>
+              Haz clic en un snippet de la lista para verlo con resaltado de sintaxis. <strong>Copiar</strong> lo deja
+              en el portapapeles y las estrellas de la cabecera cambian su rating al momento.
+            </p>
+
+            <h3>Editar y eliminar</h3>
+            <p>
+              <strong>Editar</strong> (<kbd>Ctrl</kbd>+<kbd>E</kbd>) abre el formulario con sus datos;
+              <strong>Cancelar</strong> o <kbd>Esc</kbd> vuelve sin guardar (si has cambiado algo, la app pregunta
+              antes). <strong>Eliminar</strong> pide confirmación.
+            </p>
+
+            <h3>Buscar y filtrar</h3>
+            <p>
+              El buscador (<kbd>Ctrl</kbd>+<kbd>F</kbd>) filtra por descripción y por código mientras escribes;
+              <kbd>Esc</kbd> lo vacía. El desplegable deja solo los snippets de un lenguaje. El contador del pie indica
+              cuántos se están mostrando.
+            </p>
+
+            <h2 id="almacenamiento">Dónde se guardan los snippets</h2>
+            <p>
+              El botón ⚙️ de la barra lateral abre <em>Ajustes</em>, y la etiqueta junto al contador indica el
+              almacenamiento activo (💻 Local o ☁️ API).
+            </p>
+            <h3>💻 En este equipo (por defecto)</h3>
+            <p>
+              Un archivo <code>snippets.json</code> en la carpeta de datos de la app. En Windows es
+              <code>%APPDATA%\snippets-manager\snippets.json</code>; en macOS,
+              <code>~/Library/Application Support/snippets-manager/</code>, y en Linux,
+              <code>~/.config/snippets-manager/</code>. <em>Ajustes → Mostrar archivo</em> lo abre en el explorador. Si
+              el archivo se daña, la app avisa y no lo sobrescribe.
+            </p>
+            <h3>☁️ API remota</h3>
+            <p>
+              Indica la URL base de una API compatible con
+              <code>snippets-manager-backend</code>
+              (Express + MongoDB), por ejemplo <code>https://mi-servidor.com/api/snippets</code>, y pulsa
+              <strong>Probar conexión</strong>. La API tiene que responder a:
+            </p>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Petición</th>
+                    <th>Uso</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>GET /</code> → <code>{ "snippets": [...] }</code></td>
+                    <td>Listar</td>
+                  </tr>
+                  <tr>
+                    <td><code>POST /</code> · <code>PUT /:id</code> → <code>{ "snippet": {...} }</code></td>
+                    <td>Crear · editar</td>
+                  </tr>
+                  <tr>
+                    <td><code>PATCH /:id/rating</code> · <code>DELETE /:id</code></td>
+                    <td>Rating · eliminar</td>
+                  </tr>
+                  <tr>
+                    <td><code>POST /importar</code> (opcional)</td>
+                    <td>Importar en una sola petición; si no existe, se crean uno a uno</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p>
+              El backend de referencia no tiene autenticación: si lo despliegas en Internet, cualquiera que conozca la
+              URL puede leer y modificar los snippets.
+            </p>
+            <p>
+              Cambiar de almacenamiento no mueve los snippets: expórtalos (📤) con el almacenamiento antiguo e
+              impórtalos (📥) con el nuevo.
+            </p>
+
+            <h2 id="importar">Importar y exportar</h2>
+            <p>
+              📤 guarda todos los snippets en un archivo JSON. 📥 lee un archivo con una lista de objetos como este y,
+              tras confirmar, los añade a los actuales (no borra nada). Se descartan, avisando, los elementos sin
+              descripción, lenguaje o código; el rating se ajusta a 0-5 y, en local, se conserva la fecha.
+            </p>
+            <pre class="code-block"><code>[
+  {
+    "description": "Centrar con CSS Grid",
+    "language": "css",
+    "code": ".contenedor { display: grid; place-items: center; }",
+    "rating": 5,
+    "fecha": "2026-09-20T09:30:00.000Z"
+  }
+]</code></pre>
+            <p>
+              <strong>Exportar</strong> en la vista de un snippet lo guarda como archivo de código con la extensión de
+              su lenguaje (<code>.js</code>, <code>.py</code>, <code>.cs</code>, <code>.ps1</code>, <code>.yml</code>…)
+              y una cabecera comentada con descripción, lenguaje, rating y fecha. Los JSON se exportan sin cabecera (no
+              admiten comentarios) y el shebang o la declaración <code>&lt;?xml?&gt;</code> se mantienen en la primera
+              línea.
+            </p>
+
+            <h2 id="arquitectura">Arquitectura</h2>
+            <pre class="code-block"><code>src/
+├── main.js            # proceso principal: ventana, diálogos e IPC
+├── preload.js         # puente IPC seguro (contextIsolation activo)
+├── renderer.js        # interfaz: lista, vistas, filtros, atajos y Ajustes
+├── index.html         # estructura de la ventana (CSP estricta)
+├── settings.js        # ajustes en userData/settings.json
+└── storage/
+    ├── local-store.js # snippets en userData/snippets.json
+    ├── api-store.js   # cliente de la API REST (axios)
+    └── validate.js    # validación compartida</code></pre>
+            <p>
+              Construida con <strong>Electron</strong>, <strong>highlight.js</strong> y <strong>axios</strong>. Sin
+              frameworks de UI ni bundler: HTML, CSS y JavaScript.
+            </p>
+
+            <h2 id="roadmap">Roadmap</h2>
+            <ul class="roadmap">
+              <li><span class="tag">Datos</span> Copiar los snippets de un almacenamiento a otro en un solo paso</li>
+              <li><span class="tag">Etiquetas</span> Etiquetas propias además del lenguaje</li>
+              <li><span class="tag">Calidad</span> Pruebas automáticas de los almacenamientos y del IPC</li>
+            </ul>
+
+            <h2 id="contribuir">Contribuir</h2>
+            <p>
+              Los issues y pull requests son bienvenidos. Abre un
+              <a href="https://github.com/cmurestudillos/snippets-manager/issues" rel="noopener">issue</a>
+              describiendo el bug (con los pasos para reproducirlo) o la funcionalidad que echas de menos.
+            </p>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <div>
+          <p class="brand-sm">📝 Snippets Manager Pro</p>
+          <p class="muted small">Licencia MIT · Hecho por Carlos Mur</p>
+        </div>
+        <nav aria-label="Enlaces del pie">
+          <a href="https://github.com/cmurestudillos/snippets-manager" rel="noopener">Repositorio</a>
+          <a href="https://github.com/cmurestudillos/snippets-manager/releases" rel="noopener">Versiones</a>
+          <a href="https://github.com/cmurestudillos/snippets-manager/issues" rel="noopener">Reportar un bug</a>
+          <a href="https://github.com/cmurestudillos" rel="noopener">@cmurestudillos</a>
+        </nav>
+      </div>
+    </footer>
+
+    <!-- Lightbox -->
+    <div class="lightbox" id="lightbox" hidden>
+      <button class="lightbox-close" id="lightboxClose" aria-label="Cerrar">✕</button>
+      <figure>
+        <img id="lightboxImg" src="" alt="" />
+        <figcaption id="lightboxCaption"></figcaption>
+      </figure>
+    </div>
+
+    <script src="assets/js/app.js"></script>
+  </body>
+</html>

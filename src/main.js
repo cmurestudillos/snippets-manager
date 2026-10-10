@@ -1,11 +1,23 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs').promises;
-const axios = require('axios');
-
-const API_URL = 'https://snippets-manager-service.vercel.app/api/snippets';
+const { LocalStore } = require('./storage/local-store');
+const { ApiStore, describeError } = require('./storage/api-store');
+const { prepareImport } = require('./storage/validate');
+const { loadSettings, saveSettings, isValidApiUrl } = require('./settings');
 
 let mainWindow;
+let settings;
+let store;
+// El renderer avisa si el formulario tiene cambios sin guardar (se pregunta al cerrar la ventana)
+let hasUnsavedChanges = false;
+
+const settingsFile = () => path.join(app.getPath('userData'), 'settings.json');
+const localFile = () => path.join(app.getPath('userData'), 'snippets.json');
+
+function createStore(current) {
+  return current.storage === 'api' ? new ApiStore(current.apiUrl) : new LocalStore(localFile());
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -22,6 +34,30 @@ function createWindow() {
     icon: path.join(__dirname, 'assets/icons/icon.png'),
   });
 
+  // La ventana solo muestra index.html: ni ventanas nuevas ni navegación (p. ej. al soltar un archivo)
+  mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  mainWindow.webContents.on('will-navigate', event => event.preventDefault());
+
+  mainWindow.on('close', event => {
+    if (!hasUnsavedChanges) {
+      return;
+    }
+    const choice = dialog.showMessageBoxSync(mainWindow, {
+      type: 'warning',
+      buttons: ['Descartar y salir', 'Cancelar'],
+      defaultId: 1,
+      cancelId: 1,
+      title: 'Cambios sin guardar',
+      message: 'El snippet que estás editando tiene cambios sin guardar.',
+      detail: 'Si sales ahora se perderán.',
+    });
+    if (choice === 1) {
+      event.preventDefault();
+    } else {
+      hasUnsavedChanges = false;
+    }
+  });
+
   mainWindow.loadFile(path.join(__dirname, 'index.html'));
 
   // Abrir DevTools en modo desarrollo
@@ -30,7 +66,11 @@ function createWindow() {
   }
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(async () => {
+  settings = await loadSettings(settingsFile());
+  store = createStore(settings);
+  createWindow();
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
@@ -44,67 +84,84 @@ app.on('activate', () => {
   }
 });
 
+ipcMain.on('set-unsaved-changes', (event, value) => {
+  hasUnsavedChanges = Boolean(value);
+});
+
 // ============================================
 // IPC Handlers para CRUD operations
 // ============================================
 
-// GET - Obtener todos los snippets
-ipcMain.handle('get-snippets', async () => {
+// Todas las operaciones devuelven { success, data } o { success: false, error }
+function handleStore(channel, action) {
+  ipcMain.handle(channel, async (event, ...args) => {
+    try {
+      return { success: true, data: await action(...args) };
+    } catch (error) {
+      console.error(`Error en ${channel}:`, error.message);
+      return { success: false, error: describeError(error) };
+    }
+  });
+}
+
+handleStore('get-snippets', () => store.list());
+handleStore('create-snippet', snippetData => store.create(snippetData));
+handleStore('update-snippet', (id, snippetData) => store.update(id, snippetData));
+handleStore('delete-snippet', id => store.remove(id));
+handleStore('update-rating', (id, rating) => store.setRating(id, rating));
+handleStore('import-batch', async items => {
+  const { valid } = prepareImport(items);
+  return store.importMany(valid);
+});
+
+// ============================================
+// Ajustes: almacenamiento local o API remota
+// ============================================
+
+ipcMain.handle('get-settings', () => ({
+  ...settings,
+  localFile: localFile(),
+  version: app.getVersion(),
+}));
+
+ipcMain.handle('save-settings', async (event, next) => {
+  if (next?.storage === 'api' && !isValidApiUrl(next.apiUrl)) {
+    return { success: false, error: 'La URL de la API debe empezar por http:// o https://' };
+  }
   try {
-    const response = await axios.get(API_URL);
-    return { success: true, data: response.data.snippets };
+    settings = await saveSettings(settingsFile(), next);
+    store = createStore(settings);
+    return { success: true, data: settings };
   } catch (error) {
-    console.error('Error fetching snippets:', error);
     return { success: false, error: error.message };
   }
 });
 
-// POST - Crear nuevo snippet
-ipcMain.handle('create-snippet', async (event, snippetData) => {
+// Comprueba una URL sin cambiar los ajustes: GET y respuesta con { snippets: [...] }
+ipcMain.handle('test-api', async (event, apiUrl) => {
+  if (!isValidApiUrl(apiUrl)) {
+    return { success: false, error: 'La URL debe empezar por http:// o https://' };
+  }
   try {
-    const response = await axios.post(API_URL, snippetData);
-    return { success: true, data: response.data };
+    const snippets = await new ApiStore(apiUrl).list();
+    return { success: true, data: snippets.length };
   } catch (error) {
-    console.error('Error creating snippet:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: describeError(error) };
   }
 });
 
-// PUT - Actualizar snippet
-ipcMain.handle('update-snippet', async (event, id, snippetData) => {
+ipcMain.handle('show-data-file', async () => {
   try {
-    const response = await axios.put(`${API_URL}/${id}`, snippetData);
-    return { success: true, data: response.data };
-  } catch (error) {
-    console.error('Error updating snippet:', error);
-    return { success: false, error: error.message };
-  }
-});
-
-// DELETE - Eliminar snippet
-ipcMain.handle('delete-snippet', async (event, id) => {
-  try {
-    await axios.delete(`${API_URL}/${id}`);
-    return { success: true };
-  } catch (error) {
-    console.error('Error deleting snippet:', error);
-    return { success: false, error: error.message };
-  }
-});
-
-// UPDATE - Rating
-ipcMain.handle('update-rating', async (event, id, rating) => {
-  try {
-    const response = await axios.patch(`${API_URL}/${id}/rating`, { rating });
-    return { success: true, data: response.data };
-  } catch (error) {
-    console.error('Error updating rating:', error);
-    return { success: false, error: error.message };
+    await fs.access(localFile());
+    shell.showItemInFolder(localFile());
+  } catch {
+    // Todavía no hay snippets locales: se abre la carpeta
+    await shell.openPath(app.getPath('userData'));
   }
 });
 
 // ============================================
-// NUEVAS FUNCIONALIDADES: Import/Export
+// Import/Export
 // ============================================
 
 // EXPORT - Exportar snippets a archivo JSON
@@ -131,7 +188,7 @@ ipcMain.handle('export-snippets', async (event, snippets) => {
   }
 });
 
-// IMPORT - Importar snippets desde archivo JSON
+// IMPORT - Leer snippets de un archivo JSON (se guardan después con import-batch)
 ipcMain.handle('import-snippets', async () => {
   try {
     const { filePaths } = await dialog.showOpenDialog(mainWindow, {
@@ -155,7 +212,8 @@ ipcMain.handle('import-snippets', async () => {
       throw new Error('El archivo no contiene un formato válido');
     }
 
-    return { success: true, data: snippets };
+    const { valid, skipped } = prepareImport(snippets);
+    return { success: true, data: valid, skipped };
   } catch (error) {
     console.error('Error importing snippets:', error);
     return { success: false, error: error.message };
@@ -179,9 +237,8 @@ ipcMain.handle('export-single-snippet', async (event, snippet) => {
       return { success: false, cancelled: true };
     }
 
-    // Agregar comentario con metadata al inicio del archivo
-    const header = generateFileHeader(snippet);
-    const content = header + snippet.code;
+    // Comentario con metadata al inicio del archivo (si el lenguaje admite comentarios)
+    const content = buildExportContent(snippet);
 
     await fs.writeFile(filePath, content, 'utf-8');
     return { success: true, filePath };
@@ -195,29 +252,54 @@ ipcMain.handle('export-single-snippet', async (event, snippet) => {
 // FUNCIONES AUXILIARES
 // ============================================
 
+// Extensión y estilo de comentario de la cabecera por lenguaje (valores de <select id="form-language">).
+// header: null → sin cabecera (JSON no admite comentarios).
+const BLOCK = { start: '/*', line: ' *', end: ' */' };
+const HASH = { start: null, line: '#', end: null };
+const SLASHES = { start: null, line: '//', end: null };
+const MARKUP = { start: '<!--', line: '', end: '-->' };
+
+const LANGUAGE_FILES = {
+  javascript: { ext: 'js', header: BLOCK },
+  typescript: { ext: 'ts', header: BLOCK },
+  react: { ext: 'jsx', header: BLOCK },
+  vue: { ext: 'vue', header: MARKUP },
+  angular: { ext: 'ts', header: BLOCK },
+  nodejs: { ext: 'js', header: BLOCK },
+  python: { ext: 'py', header: { start: '"""', line: '', end: '"""' } },
+  java: { ext: 'java', header: BLOCK },
+  csharp: { ext: 'cs', header: BLOCK },
+  cpp: { ext: 'cpp', header: BLOCK },
+  php: { ext: 'php', header: BLOCK },
+  ruby: { ext: 'rb', header: { start: '=begin', line: '', end: '=end' } },
+  go: { ext: 'go', header: BLOCK },
+  rust: { ext: 'rs', header: BLOCK },
+  swift: { ext: 'swift', header: BLOCK },
+  kotlin: { ext: 'kt', header: BLOCK },
+  html: { ext: 'html', header: MARKUP },
+  css: { ext: 'css', header: BLOCK },
+  scss: { ext: 'scss', header: BLOCK },
+  sass: { ext: 'sass', header: SLASHES },
+  sql: { ext: 'sql', header: BLOCK },
+  json: { ext: 'json', header: null },
+  xml: { ext: 'xml', header: MARKUP },
+  yaml: { ext: 'yml', header: HASH },
+  markdown: { ext: 'md', header: MARKUP },
+  bash: { ext: 'sh', header: HASH },
+  powershell: { ext: 'ps1', header: HASH },
+  git: { ext: 'txt', header: HASH },
+  docker: { ext: 'dockerfile', header: HASH },
+  http: { ext: 'http', header: HASH },
+  graphql: { ext: 'graphql', header: HASH },
+  regex: { ext: 'txt', header: HASH },
+};
+
+function getLanguageFile(language) {
+  return LANGUAGE_FILES[String(language).toLowerCase()] || { ext: 'txt', header: HASH };
+}
+
 function getFileExtension(language) {
-  const extensions = {
-    javascript: 'js',
-    typescript: 'ts',
-    python: 'py',
-    java: 'java',
-    css: 'css',
-    html: 'html',
-    sql: 'sql',
-    bash: 'sh',
-    git: 'txt',
-    http: 'http',
-    json: 'json',
-    markdown: 'md',
-    php: 'php',
-    ruby: 'rb',
-    go: 'go',
-    rust: 'rs',
-    vue: 'vue',
-    react: 'jsx',
-    angular: 'ts',
-  };
-  return extensions[language.toLowerCase()] || 'txt';
+  return getLanguageFile(language).ext;
 }
 
 function sanitizeFilename(filename) {
@@ -225,37 +307,28 @@ function sanitizeFilename(filename) {
 }
 
 function generateFileHeader(snippet) {
-  const commentStyle = getCommentStyle(snippet.language);
+  const style = getLanguageFile(snippet.language).header;
+  if (!style) {
+    return '';
+  }
   const date = new Date(snippet.fecha).toLocaleDateString();
+  const rating = Math.min(5, Math.max(0, Math.round(snippet.rating || 0)));
+  const lines = [
+    `Snippet: ${snippet.description}`,
+    `Language: ${snippet.language}`,
+    `Rating: ${'★'.repeat(rating)}${'☆'.repeat(5 - rating)}`,
+    `Date: ${date}`,
+  ].map(text => `${style.line} ${text}`);
 
-  return `${commentStyle.start}
-${commentStyle.line} Snippet: ${snippet.description}
-${commentStyle.line} Language: ${snippet.language}
-${commentStyle.line} Rating: ${'★'.repeat(snippet.rating || 0)}${'☆'.repeat(5 - (snippet.rating || 0))}
-${commentStyle.line} Date: ${date}
-${commentStyle.end}
-
-`;
+  return [style.start, ...lines, style.end].filter(line => line !== null).join('\n') + '\n\n';
 }
 
-function getCommentStyle(language) {
-  const styles = {
-    javascript: { start: '/*', line: ' *', end: ' */' },
-    typescript: { start: '/*', line: ' *', end: ' */' },
-    python: { start: '"""', line: '', end: '"""' },
-    java: { start: '/*', line: ' *', end: ' */' },
-    css: { start: '/*', line: ' *', end: ' */' },
-    html: { start: '<!--', line: '', end: '-->' },
-    sql: { start: '/*', line: ' *', end: ' */' },
-    bash: { start: '#', line: '#', end: '' },
-    php: { start: '/*', line: ' *', end: ' */' },
-    ruby: { start: '=begin', line: '', end: '=end' },
-    go: { start: '/*', line: ' *', end: ' */' },
-    rust: { start: '/*', line: ' *', end: ' */' },
-    vue: { start: '<!--', line: '', end: '-->' },
-    react: { start: '/*', line: ' *', end: ' */' },
-    angular: { start: '/*', line: ' *', end: ' */' },
-  };
-
-  return styles[language.toLowerCase()] || { start: '/*', line: ' *', end: ' */' };
+// La declaración <?xml ...?> y el shebang (#!) tienen que ser la primera línea: la cabecera va detrás
+function buildExportContent(snippet) {
+  const header = generateFileHeader(snippet);
+  const declaration = snippet.code.match(/^\s*(<\?xml[^>]*\?>|#![^\r\n]*)\r?\n?/);
+  if (declaration) {
+    return declaration[0].trimStart().replace(/\r?\n?$/, '\n') + header + snippet.code.slice(declaration[0].length);
+  }
+  return header + snippet.code;
 }
